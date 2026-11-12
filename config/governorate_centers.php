@@ -1,0 +1,32 @@
+<?php
+
+// lat/lng = مركز تقريبي للمحافظة، radius = أقصى بُعد مسموح بالكيلومتر، zoom = تقريب الخريطة
+return [
+    'Cairo'          => ['lat' => 30.0444, 'lng' => 31.2357, 'radius' => 45,  'zoom' => 10],
+    'Giza'           => ['lat' => 29.9870, 'lng' => 31.2118, 'radius' => 90,  'zoom' => 9],
+    'Alexandria'     => ['lat' => 31.2001, 'lng' => 29.9187, 'radius' => 60,  'zoom' => 10],
+    'Qalyubia'       => ['lat' => 30.4100, 'lng' => 31.2100, 'radius' => 40,  'zoom' => 10],
+    'Menoufia'       => ['lat' => 30.5500, 'lng' => 30.9500, 'radius' => 55,  'zoom' => 10],
+    'Gharbia'        => ['lat' => 30.8754, 'lng' => 31.0335, 'radius' => 45,  'zoom' => 10],
+    'Dakahlia'       => ['lat' => 31.0409, 'lng' => 31.3785, 'radius' => 60,  'zoom' => 10],
+    'Sharqia'        => ['lat' => 30.5877, 'lng' => 31.5020, 'radius' => 80,  'zoom' => 9],
+    'Beheira'        => ['lat' => 30.8480, 'lng' => 30.3400, 'radius' => 100, 'zoom' => 9],
+    'Kafr El Sheikh' => ['lat' => 31.1107, 'lng' => 30.9388, 'radius' => 65,  'zoom' => 10],
+    'Damietta'       => ['lat' => 31.4165, 'lng' => 31.8133, 'radius' => 45,  'zoom' => 10],
+    'Port Said'      => ['lat' => 31.2653, 'lng' => 32.3019, 'radius' => 55,  'zoom' => 10],
+    'Ismailia'       => ['lat' => 30.5965, 'lng' => 32.2715, 'radius' => 80,  'zoom' => 9],
+    'Suez'           => ['lat' => 29.9668, 'lng' => 32.5498, 'radius' => 120, 'zoom' => 9],
+    'North Sinai'    => ['lat' => 30.8000, 'lng' => 33.8000, 'radius' => 200, 'zoom' => 8],
+    'South Sinai'    => ['lat' => 28.5000, 'lng' => 33.9000, 'radius' => 220, 'zoom' => 8],
+    'Faiyum'         => ['lat' => 29.3084, 'lng' => 30.8428, 'radius' => 80,  'zoom' => 9],
+    'Beni Suef'      => ['lat' => 29.0661, 'lng' => 31.0994, 'radius' => 90,  'zoom' => 9],
+    'Minya'          => ['lat' => 28.1099, 'lng' => 30.7503, 'radius' => 120, 'zoom' => 9],
+    'Asyut'          => ['lat' => 27.1783, 'lng' => 31.1859, 'radius' => 140, 'zoom' => 9],
+    'Sohag'          => ['lat' => 26.5591, 'lng' => 31.6948, 'radius' => 110, 'zoom' => 9],
+    'Qena'           => ['lat' => 26.1551, 'lng' => 32.7160, 'radius' => 110, 'zoom' => 9],
+    'Luxor'          => ['lat' => 25.6872, 'lng' => 32.6396, 'radius' => 80,  'zoom' => 10],
+    'Aswan'          => ['lat' => 24.0889, 'lng' => 32.8998, 'radius' => 170, 'zoom' => 8],
+    'Red Sea'        => ['lat' => 26.2000, 'lng' => 34.2000, 'radius' => 250, 'zoom' => 7],
+    'New Valley'     => ['lat' => 26.0000, 'lng' => 29.0000, 'radius' => 380, 'zoom' => 7],
+    'Matrouh'        => ['lat' => 30.0000, 'lng' => 27.5000, 'radius' => 280, 'zoom' => 7],
+];

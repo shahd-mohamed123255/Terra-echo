@@ -1,0 +1,33 @@
+<?php
+
+return [
+    'Egypt' => [
+        'Cairo'          => ['Nasr City', 'Heliopolis', 'Maadi', 'New Cairo', 'Shubra'],
+        'Giza'           => ['Giza', 'Dokki', '6th of October', 'Sheikh Zayed', 'Hawamdeya'],
+        'Alexandria'     => ['Alexandria', 'Borg El Arab', 'Montaza'],
+        'Qalyubia'       => ['Banha', 'Shubra El Kheima', 'Qalyub', 'Khanka'],
+        'Menoufia'       => ['Shebin El Kom', 'Quesna', 'Menouf', 'Sadat City', 'Ashmoun', 'Tala', 'Berket El Sab', 'Bagour'],
+        'Gharbia'        => ['Tanta', 'El Mahalla El Kubra', 'Kafr El Zayat', 'Zefta'],
+        'Dakahlia'       => ['Mansoura', 'Mit Ghamr', 'Talkha', 'Belqas'],
+        'Sharqia'        => ['Zagazig', '10th of Ramadan', 'Belbeis', 'Abu Hammad'],
+        'Beheira'        => ['Damanhur', 'Kafr El Dawwar', 'Rosetta', 'Edku'],
+        'Kafr El Sheikh' => ['Kafr El Sheikh', 'Desouk', 'Baltim'],
+        'Damietta'       => ['Damietta', 'New Damietta', 'Ras El Bar'],
+        'Port Said'      => ['Port Said', 'Port Fouad'],
+        'Ismailia'       => ['Ismailia', 'Fayed', 'Qantara'],
+        'Suez'           => ['Suez', 'Ain Sokhna'],
+        'North Sinai'    => ['Arish', 'Sheikh Zuweid'],
+        'South Sinai'    => ['Sharm El Sheikh', 'Dahab', 'Saint Catherine'],
+        'Faiyum'         => ['Faiyum', 'Sinnuris', 'Tamiya'],
+        'Beni Suef'      => ['Beni Suef', 'El Wasta', 'Nasser'],
+        'Minya'          => ['Minya', 'Mallawi', 'Samalut', 'Beni Mazar'],
+        'Asyut'          => ['Asyut', 'Manfalut', 'Abnub'],
+        'Sohag'          => ['Sohag', 'Akhmim', 'Girga'],
+        'Qena'           => ['Qena', 'Nag Hammadi', 'Qus'],
+        'Luxor'          => ['Luxor', 'Esna', 'Armant'],
+        'Aswan'          => ['Aswan', 'Kom Ombo', 'Edfu'],
+        'Red Sea'        => ['Hurghada', 'Safaga', 'Marsa Alam'],
+        'New Valley'     => ['Kharga', 'Dakhla', 'Farafra'],
+        'Matrouh'        => ['Marsa Matrouh', 'Siwa', 'El Alamein'],
+    ],
+];

@@ -1,0 +1,74 @@
+/* دخول الخطوات بالتتابع لما الصفحة تفتح */
+.steps li {
+    animation: stepIn .5s ease both;
+    transition: transform .25s ease, box-shadow .25s ease;
+}
+.steps li:nth-child(1) { animation-delay: .05s; }
+.steps li:nth-child(2) { animation-delay: .12s; }
+.steps li:nth-child(3) { animation-delay: .19s; }
+.steps li:nth-child(4) { animation-delay: .26s; }
+
+@keyframes stepIn {
+    from { opacity: 0; transform: translateX(-16px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+/* hover: الخطوة تتحرك لقدام والدايرة تكبر */
+.steps li:hover { transform: translateX(8px); }
+.steps li span { transition: transform .25s ease; }
+.steps li:hover span { transform: scale(1.18); }
+
+/* الخطوة النشطة: نبضة خفيفة */
+.steps li.active { animation: stepIn .5s ease both, glow 2.4s ease-in-out .6s infinite; }
+
+@keyframes glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(14, 165, 233, .45); }
+    50%      { box-shadow: 0 0 14px 4px rgba(14, 165, 233, .35); }
+}
+
+/* احترام اللي مفعّل تقليل الحركة في جهازه */
+@media (prefers-reduced-motion: reduce) {
+    .steps li, .steps li.active { animation: none; transition: none; }
+}
+
+/* ===== تأكيد أوضح للـ hover والضغط ===== */
+.steps li {
+    border-radius: 12px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: transform .25s ease, background .25s ease,
+                box-shadow .25s ease, border-color .25s ease;
+}
+
+/* hover: خلفية ملوّنة + ظل + حدّ مضيء */
+.steps li:hover {
+    transform: translateX(8px);
+    background: linear-gradient(90deg, rgba(14, 165, 233, .35), rgba(14, 165, 233, .08));
+    border-color: rgba(56, 189, 248, .7);
+    box-shadow: 0 6px 18px rgba(14, 165, 233, .45);
+}
+
+/* لما تضغطي بالماوس: تنزل وتصغر شوية كأنها زرار */
+.steps li:active {
+    transform: translateX(4px) scale(.96);
+    background: rgba(14, 165, 233, .6);
+    box-shadow: 0 2px 8px rgba(14, 165, 233, .6) inset;
+}
+
+/* الخطوة النشطة: أوضح من الباقي */
+.steps li.active {
+    background: linear-gradient(90deg, #0ea5e9, #38bdf8);
+    color: #fff;
+    font-weight: bold;
+    box-shadow: 0 8px 22px rgba(14, 165, 233, .55);
+}
+
+/* اللينك جوه الخطوة ياخد مساحتها كلها عشان الضغط يشتغل على الصف كله */
+.steps li a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 6px 4px;
+}
+

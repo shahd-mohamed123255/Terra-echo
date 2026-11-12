@@ -1,0 +1,53 @@
+.d-row { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
+.d-block { margin-bottom: 28px; }
+.d-block h2 { margin-bottom: 12px; }
+.d-input {
+    padding: 12px 14px; min-width: 220px; border-radius: 10px;
+    border: 1px solid rgba(128,128,128,.6); font-size: 15px;
+}
+.choice { position: relative; cursor: pointer; }
+.choice input { position: absolute; opacity: 0; }
+.choice > span, .choice > .soil-card {
+    display: block; padding: 12px 22px; border-radius: 10px;
+    border: 1px solid rgba(128,128,128,.6);
+}
+.choice input:checked + span,
+.choice input:checked + .soil-card {
+    border: 2px solid #2563eb; color: #2563eb; font-weight: bold;
+}
+.soil-cards { display: flex; flex-wrap: wrap; gap: 20px; }
+.soil-card { width: 170px; text-align: center; padding: 12px; }
+.soil-card img { width: 100%; height: 110px; object-fit: contain; }
+.soil-card small { display: block; font-weight: normal; margin-top: 6px; opacity: .8; }
+#analysis-fields { display: none; }
+.soil-svg { width: 100%; height: 110px; transition: transform .25s ease; }
+.soil-card:hover .soil-svg { transform: translateY(-4px) scale(1.05); }
+.soil-svg { filter: drop-shadow(0 6px 8px rgba(0, 0, 0, .25)); }
+
+.sum-card {
+    width: 100%; max-width: 760px; margin: 20px auto 0;
+    border-radius: 14px; overflow: hidden; text-align: left;
+    background: rgba(8, 12, 24, .72);
+    border: 1px solid rgba(255, 255, 255, .22);
+    backdrop-filter: blur(6px);
+}
+.sum-item {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 16px; padding: 16px 22px;
+    border-bottom: 1px solid rgba(255, 255, 255, .14);
+}
+.sum-item:last-child { border-bottom: 0; }
+.sum-item small { display: block; opacity: .65; margin-bottom: 4px; font-size: 12px; }
+.sum-item a {
+    flex-shrink: 0; padding: 6px 14px; border-radius: 8px;
+    color: #38bdf8; text-decoration: none; font-weight: bold;
+    border: 1px solid rgba(56, 189, 248, .5);
+    transition: background .2s ease, color .2s ease;
+}
+.sum-item a:hover { background: #0ea5e9; color: #fff; }
+.sum-warn {
+    width: 100%; max-width: 760px; margin: 16px auto 0; text-align: left;
+    padding: 12px 16px; border-radius: 10px; font-size: 14px;
+    background: rgba(255, 196, 0, .15); color: #ffd666;
+    border: 1px solid rgba(255, 196, 0, .45);
+}

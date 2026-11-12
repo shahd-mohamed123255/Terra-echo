@@ -1,0 +1,62 @@
+body {
+    background: #050b1a;
+}
+
+.about {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 110px 24px 60px;
+    color: #fff;
+    text-align: center;
+}
+
+.about-hero h1 {
+    font-size: clamp(2.5rem, 7vw, 4.5rem);
+    letter-spacing: 4px;
+    margin: 0 0 12px;
+}
+
+.about-tagline {
+    color: #9db7e8;
+    font-size: 1.1rem;
+    margin: 0 0 40px;
+}
+
+.about-banner {
+    width: 100%;
+    height: auto;
+    border-radius: 18px;
+    box-shadow: 0 0 40px rgba(46, 124, 255, 0.35);
+    margin-bottom: 50px;
+}
+
+.about-section {
+    max-width: 780px;
+    margin: 0 auto 40px;
+}
+
+.about-section h2 {
+    font-size: 1.6rem;
+    margin-bottom: 12px;
+    color: #6fa8ff;
+}
+
+.about-section p {
+    line-height: 1.8;
+    color: #cfd9ee;
+}
+
+.about-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+}
+
+.about-chips span {
+    padding: 8px 18px;
+    border: 1px solid rgba(111, 168, 255, 0.5);
+    border-radius: 999px;
+    background: rgba(46, 124, 255, 0.12);
+    color: #cfe0ff;
+}

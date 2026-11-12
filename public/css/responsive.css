@@ -1,0 +1,54 @@
+@media (max-width: 768px) {
+
+    /* الصفحة عمود واحد: الـ sidebar فوق والمحتوى تحته */
+    .wizard { flex-direction: column !important; min-height: 100vh; }
+
+    .sidebar {
+        display: flex !important;
+        flex-direction: column;
+        width: 100% !important;
+        height: auto !important;
+        position: static !important;
+        padding: 12px 14px !important;
+        border-radius: 0 0 18px 18px;
+    }
+    .sidebar .user-badge { display: none !important; }
+    .sidebar-logo { font-size: 18px; }
+
+    /* الخطوات كشريط أفقي */
+    .steps {
+        display: flex !important;
+        flex-direction: row !important;
+        gap: 6px;
+        margin: 10px 0 0 !important;
+        padding: 0 !important;
+        overflow-x: auto;
+        list-style: none;
+    }
+    .steps li { flex: 1 0 auto; margin: 0 !important; }
+    .steps li a { padding: 8px 12px; font-size: 13px; white-space: nowrap; }
+    .steps li:hover { transform: none; }
+
+    .content { width: 100% !important; padding: 20px 16px 32px !important; }
+    .content h1 { font-size: 26px; }
+    .content h2 { font-size: 18px; }
+
+    /* الخانات */
+    .d-row { gap: 10px; }
+    .d-input { min-width: 0; width: 100%; }
+    .d-row .choice { flex: 1 1 calc(50% - 10px); }
+    .d-row .choice > span { padding: 10px 12px; text-align: center; font-size: 14px; }
+    .d-block .hint { margin-bottom: 14px; line-height: 1.5; }
+
+    /* كروت التربة: 3 جنب بعض بدل واحد تحت التاني */
+    .soil-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .soil-card { width: auto; padding: 8px 4px; font-size: 14px; }
+    .soil-svg { height: 70px; }
+
+    /* Summary */
+    .sum-item { flex-wrap: wrap; padding: 14px 16px; }
+    .sum-item > div { flex: 1 1 100%; }
+
+    .actions { gap: 10px; }
+    .actions .btn { flex: 1; text-align: center; }
+}
