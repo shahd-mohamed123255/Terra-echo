@@ -30,6 +30,8 @@ Route::get('/my-farm', [MyFarmController::class, 'index'])->name('farm.index');
 
     Route::get('/explore-farm', [FarmController::class, 'explore'])->name('farm.explore');
     Route::post('/explore-farm', [FarmController::class, 'storeLocation'])->name('farm.location.store');
+    Route::get('/plans', [FarmController::class, 'plans'])->name('plans');
+    Route::post('/plans', [FarmController::class, 'selectPlan'])->name('plans.select');
 });
 
 

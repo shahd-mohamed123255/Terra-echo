@@ -4,9 +4,21 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class FarmController extends Controller
 {
+    private const PLANS = ['Starter', 'Professional', 'Enterprise'];
+
+    private function draftFarm(Request $request)
+    {
+        return $request->user()
+            ->farms()
+            ->where('status', 'draft')
+            ->latest()
+            ->first();
+    }
+
     public function explore(Request $request)
     {
         $farm = $request->user()
@@ -66,6 +78,39 @@ class FarmController extends Controller
         }
 
                 return redirect()->route('farm.details');
+    }
+
+    public function plans(Request $request)
+    {
+        if (! $this->draftFarm($request)) {
+            return redirect()->route('farm.explore')
+                ->withErrors(['location' => 'Please save your farm location first.']);
+        }
+
+        return view('pages.plans', ['plans' => self::PLANS]);
+    }
+
+    public function selectPlan(Request $request)
+    {
+        $data = $request->validate([
+            'plan' => ['required', Rule::in(self::PLANS)],
+        ]);
+
+        $farm = $this->draftFarm($request);
+
+        if (! $farm) {
+            return redirect()->route('farm.explore')
+                ->withErrors(['location' => 'Please save your farm location first.']);
+        }
+
+        $user = $request->user();
+
+        DB::transaction(function () use ($user, $farm, $data) {
+            $user->update(['plan' => $data['plan']]);
+            $farm->update(['status' => 'active']);
+        });
+
+        return redirect()->route('farm.index', ['farm' => $farm->id]);
     }
 
     // فحص تقريبي: المسافة بين الـ pin ومركز المحافظة (haversine) لازم تكون داخل الـ radius

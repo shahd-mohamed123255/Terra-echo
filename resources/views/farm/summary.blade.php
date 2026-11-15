@@ -108,10 +108,7 @@
 
             <div class="actions">
                 <a href="{{ route('farm.water') }}" class="btn btn-light">Back</a>
-                <form method="POST" action="{{ route('farm.confirm') }}" style="display:inline">
-    @csrf
-    <button type="submit" class="btn btn-primary">Continue</button>
-</form>
+                <a href="{{ route('plans') }}" class="btn btn-primary">Continue to Plans</a>
             </div>
 
         </main>
