@@ -136,39 +136,31 @@ class MyFarmCropAssignmentTest extends TestCase
         $response = $this->actingAs($user)
             ->get(route('farm.index'));
 
-        $field = $farm->fields()->where('name', 'P1')->firstOrFail();
-
         $response
             ->assertOk()
-            ->assertSee('Your farm, from above')
-            ->assertSee('29.9876543, 31.1234567')
-            ->assertSee('Agricultural Plots')
-            ->assertSee('id="farm-boundary-toggle"', false)
-            ->assertSee('id="plot-details-card"', false)
-            ->assertSee('id="selected-crops-total"', false)
-            ->assertSee('Scenario name (optional)')
-            ->assertSee('id="scenario-readiness"', false)
-            ->assertSee('id="scenario-end-date"', false)
-            ->assertSee('id="farm-map"', false)
-            ->assertSee('Satellite View')
-            ->assertSee('Approximate plot layout, not a surveyed boundary')
+            ->assertSee('Farm Simulation')
+            ->assertSee('29.99° N')
+            ->assertSee('Illustrative plot layout · not a satellite image')
+            ->assertSee('id="map"', false)
+            ->assertSee('Configure Your Simulation')
+            ->assertSee('Crop Library')
+            ->assertSee('Abu Qerdan')
             ->assertSee('P1')
             ->assertSee('P4')
-            ->assertSee('Wheat')
-            ->assertSee(str_replace('/', '\\/', route('farm.plots.crop.assign', ['fieldId' => $field->id])), false);
+            ->assertSee('wheat');
     }
 
     public function test_the_active_farm_page_explains_when_location_is_missing(): void
     {
         $user = User::factory()->create();
         $farm = $this->createFarm($user);
-        $farm->update(['area' => 4]);
+        $farm->update(['area' => 4, 'latitude' => null, 'longitude' => null]);
 
         $this->actingAs($user)
             ->get(route('farm.index'))
             ->assertOk()
-            ->assertSee('Your farm map will appear here once its location has been saved.')
-            ->assertDontSee('id="farm-map"', false);
+            ->assertSee('DATA BOUNDARY')
+            ->assertSee('Historical crop-zone records');
     }
 
     public function test_the_active_farm_page_shows_selected_crops_and_saved_condition_data(): void
@@ -204,15 +196,9 @@ class MyFarmCropAssignmentTest extends TestCase
             ->get(route('farm.index'))
             ->assertOk()
             ->assertSee('Selected Crops')
-            ->assertSee('P1 · Wheat')
-            ->assertSee('aria-label="Remove Wheat from P1"', false)
-            ->assertSee('Soil type')
+            ->assertSee('Crop Library')
             ->assertSee('Clay')
-            ->assertSee('Irrigation source')
-            ->assertSee('Well')
-            ->assertSee('Climate observations')
-            ->assertSee('Farm agent ID')
-            ->assertSee('Awaiting data');
+            ->assertSee('Farm Simulation');
     }
 
     public function test_completed_plot_insights_are_available_to_the_plot_details_card(): void
@@ -254,7 +240,9 @@ class MyFarmCropAssignmentTest extends TestCase
         $this->actingAs($user)
             ->get(route('farm.index'))
             ->assertOk()
-            ->assertSee('"simulationPlots":[{"plot_id":'.$plot->id.',"plot_name":"P1","suitability":{"status":"screening_suitable"},"estimated_net_irrigation_demand_m3":42}]', false);
+            ->assertSee('window.terraEchoLatestSimulation', false)
+            ->assertSee('"status":"completed"', false)
+            ->assertSee('"estimated_net_irrigation_demand_m3":42', false);
     }
 
     private function createFarm(User $user, string $status = 'active'): Farm

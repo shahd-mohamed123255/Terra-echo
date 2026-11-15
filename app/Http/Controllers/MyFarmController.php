@@ -71,11 +71,73 @@ class MyFarmController extends Controller
             ->latest()
             ->first();
 
+        $availablePlans = app(PlanController::class)->generatePlansForFarm($farm);
+        $userPlanId = $request->user()->plan ?? 'balanced';
+        $selectedPlanCode = match ($userPlanId) {
+            'water-saving' => 'plan_b',
+            'soil-health' => 'plan_c',
+            'high-yield' => 'plan_d',
+            default => 'plan_a',
+        };
+
+        $cropSlugMap = [
+            'wheat' => 'wheat',
+            'beans' => 'faba_bean',
+            'faba-bean' => 'faba_bean',
+            'faba_bean' => 'faba_bean',
+            'berseem-clover' => 'berseem_clover',
+            'berseem_clover' => 'berseem_clover',
+            'clover' => 'berseem_clover',
+            'barley' => 'barley',
+            'corn' => 'maize',
+            'maize' => 'maize',
+            'cotton' => 'cotton',
+            'rice' => 'rice',
+            'potato' => 'potato',
+            'potatoes' => 'potato',
+            'sugar-beet' => 'sugar_beet',
+            'sugar_beet' => 'sugar_beet',
+            'soybeans' => 'soybeans',
+            'sorghum' => 'sorghum',
+        ];
+
+        $plotsMap = [];
+        foreach ($plots as $plot) {
+            $rawSlug = $plot->crop?->slug ?? ($plot->crop?->name ? strtolower(str_replace(' ', '_', $plot->crop->name)) : null);
+            $mappedCrop = $rawSlug ? ($cropSlugMap[$rawSlug] ?? $rawSlug) : 'wheat';
+            $plotsMap[$plot->name] = $mappedCrop;
+        }
+
+        $farmData = [
+            'id' => $farm->id,
+            'name' => $farm->city ? $farm->city . ' Farm' : ($farm->name ?? 'Illustrative Farm'),
+            'location' => collect([$farm->city, $farm->governorate, $farm->country])->filter()->implode(', ') ?: 'Egypt',
+            'governorate' => $farm->governorate,
+            'city' => $farm->city,
+            'country' => $farm->country,
+            'latitude' => $farm->latitude ? (float) $farm->latitude : 30.56,
+            'longitude' => $farm->longitude ? (float) $farm->longitude : 31.01,
+            'coordinates' => $farm->latitude && $farm->longitude
+                ? round((float) $farm->latitude, 2) . '° N, ' . round((float) $farm->longitude, 2) . '° E'
+                : '30.56° N · Monufia data zone',
+            'area' => (float) ($farm->area ?? 5.0),
+            'area_unit' => $farm->area_unit ?? 'feddan',
+            'area_hectares' => round((float) ($farm->area ?? 5.0) * 0.42, 2),
+            'soil_type' => strtolower((string) ($farm->soilType?->name ?? 'clay')),
+            'target_season' => strtolower((string) ($farm->target_season ?? 'winter')),
+            'priority' => $farm->priority ?? 'balanced',
+            'plots' => $plotsMap,
+        ];
+
         return view('farm.my-farm', [
             'farms' => $farms,
             'farm' => $farm,
+            'farmData' => $farmData,
             'crops' => Crop::orderBy('id')->get(),
             'plots' => $plots,
+            'availablePlans' => $availablePlans,
+            'selectedPlanCode' => $selectedPlanCode,
+            'userPlanId' => $userPlanId,
             'simulationOptions' => config('simulation'),
             'scenarioSettings' => $scenario?->settings ?? [],
             'latestSimulation' => $scenario,

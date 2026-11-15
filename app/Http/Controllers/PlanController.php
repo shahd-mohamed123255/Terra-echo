@@ -37,6 +37,18 @@ class PlanController extends Controller
                 ->withErrors(['location' => 'Please save your farm location first.']);
         }
 
+        $plans = $this->generatePlansForFarm($farm);
+        $userSelectedPlan = $request->user()->plan ?? 'balanced';
+
+        return view('pages.plans', [
+            'farm' => $farm,
+            'plans' => $plans,
+            'userSelectedPlan' => $userSelectedPlan,
+        ]);
+    }
+
+    public function generatePlansForFarm(Farm $farm): array
+    {
         $farm->loadMissing(['soilType', 'soilReport', 'crops']);
 
         $farmAreaFeddan = (float) ($farm->area ?? 5.0);
@@ -48,39 +60,16 @@ class PlanController extends Controller
         // Retrieve available crops from database
         $crops = Crop::all()->keyBy('slug');
         $wheat = $crops->get('wheat') ?? Crop::firstOrCreate(['slug' => 'wheat'], ['name' => 'Wheat', 'category' => 'cereal']);
-        $beans = $crops->get('beans') ?? Crop::firstOrCreate(['slug' => 'beans'], ['name' => 'Beans', 'category' => 'legume']);
-        $clover = $crops->get('berseem-clover') ?? Crop::firstOrCreate(['slug' => 'berseem-clover'], ['name' => 'Berseem Clover', 'category' => 'forage']);
-        $corn = $crops->get('corn') ?? Crop::firstOrCreate(['slug' => 'corn'], ['name' => 'Corn', 'category' => 'cereal']);
+        $beans = $crops->get('beans') ?? $crops->get('faba_beans') ?? Crop::firstOrCreate(['slug' => 'beans'], ['name' => 'Beans', 'category' => 'legume']);
+        $clover = $crops->get('berseem-clover') ?? $crops->get('clover') ?? Crop::firstOrCreate(['slug' => 'berseem-clover'], ['name' => 'Berseem Clover', 'category' => 'forage']);
+        $corn = $crops->get('corn') ?? $crops->get('maize') ?? Crop::firstOrCreate(['slug' => 'corn'], ['name' => 'Corn', 'category' => 'cereal']);
         $barley = $crops->get('barley') ?? Crop::firstOrCreate(['slug' => 'barley'], ['name' => 'Barley', 'category' => 'cereal']);
 
         // Build the 4 plans tailored to the farm
         $planDefinitions = [
-            'water-saving' => [
-                'id' => 'water-saving',
-                'name' => 'Water-Saving Strategy',
-                'badge' => '−22% Water',
-                'is_recommended' => false,
-                'description' => 'Optimized for water scarcity using precision drip scheduling, deficit irrigation during vegetative stages, and high water-use efficiency crops.',
-                'irrigation_factor' => 0.78,
-                'yield_multiplier' => 0.96,
-                'suitability_score' => 86,
-                'risk_level' => 'Low water risk · Moderate yield variance',
-                'management' => 'Drip fertigation with 20% regulated deficit in vegetative stage; organic mulch cover.',
-                'pros' => [
-                    'Saves ~20–25% irrigation water, buffering against canal supply quotas',
-                    'Raises crop water-use efficiency (kg produce per m³ water)',
-                    'Significantly cuts energy and pumping diesel/electric costs',
-                ],
-                'cons' => [
-                    'Requires strict scheduling and drip infrastructure maintenance',
-                    'Slightly lower gross harvest tonnage under fully saturated water supply',
-                ],
-                'plots' => $isWinter
-                    ? ['P1' => $wheat, 'P2' => $barley, 'P3' => $beans, 'P4' => $wheat]
-                    : ['P1' => $corn, 'P2' => $crops->get('sorghum') ?? $corn, 'P3' => $crops->get('soybeans') ?? $corn, 'P4' => $corn],
-            ],
             'balanced' => [
                 'id' => 'balanced',
+                'plan_code' => 'plan_a',
                 'name' => 'Balanced Production',
                 'badge' => '(Recommended)',
                 'is_recommended' => true,
@@ -103,8 +92,34 @@ class PlanController extends Controller
                     ? ['P1' => $wheat, 'P2' => $wheat, 'P3' => $beans, 'P4' => $wheat]
                     : ['P1' => $corn, 'P2' => $corn, 'P3' => $crops->get('soybeans') ?? $corn, 'P4' => $corn],
             ],
+            'water-saving' => [
+                'id' => 'water-saving',
+                'plan_code' => 'plan_b',
+                'name' => 'Water-Saving Strategy',
+                'badge' => '−22% Water',
+                'is_recommended' => false,
+                'description' => 'Optimized for water scarcity using precision drip scheduling, deficit irrigation during vegetative stages, and high water-use efficiency crops.',
+                'irrigation_factor' => 0.78,
+                'yield_multiplier' => 0.96,
+                'suitability_score' => 86,
+                'risk_level' => 'Low water risk · Moderate yield variance',
+                'management' => 'Drip fertigation with 20% regulated deficit in vegetative stage; organic mulch cover.',
+                'pros' => [
+                    'Saves ~20–25% irrigation water, buffering against canal supply quotas',
+                    'Raises crop water-use efficiency (kg produce per m³ water)',
+                    'Significantly cuts energy and pumping diesel/electric costs',
+                ],
+                'cons' => [
+                    'Requires strict scheduling and drip infrastructure maintenance',
+                    'Slightly lower gross harvest tonnage under fully saturated water supply',
+                ],
+                'plots' => $isWinter
+                    ? ['P1' => $wheat, 'P2' => $barley, 'P3' => $beans, 'P4' => $wheat]
+                    : ['P1' => $corn, 'P2' => $crops->get('sorghum') ?? $corn, 'P3' => $crops->get('soybeans') ?? $corn, 'P4' => $corn],
+            ],
             'soil-health' => [
                 'id' => 'soil-health',
+                'plan_code' => 'plan_c',
                 'name' => 'Soil Health & Legume Integration',
                 'badge' => 'Bio-N Fixation',
                 'is_recommended' => false,
@@ -129,6 +144,7 @@ class PlanController extends Controller
             ],
             'high-yield' => [
                 'id' => 'high-yield',
+                'plan_code' => 'plan_d',
                 'name' => 'High-Yield Intensive Production',
                 'badge' => 'Max Harvest Tonnage',
                 'is_recommended' => false,
@@ -170,6 +186,7 @@ class PlanController extends Controller
 
             $plans[] = [
                 'id' => $p['id'],
+                'plan_code' => $p['plan_code'],
                 'name' => $p['name'],
                 'badge' => $p['badge'],
                 'is_recommended' => $p['is_recommended'],
@@ -195,13 +212,7 @@ class PlanController extends Controller
             ];
         }
 
-        $userSelectedPlan = $request->user()->plan ?? 'balanced';
-
-        return view('pages.plans', [
-            'farm' => $farm,
-            'plans' => $plans,
-            'userSelectedPlan' => $userSelectedPlan,
-        ]);
+        return $plans;
     }
 
     public function selectPlan(Request $request)

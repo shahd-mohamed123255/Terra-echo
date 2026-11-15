@@ -115,7 +115,7 @@
                             @endforeach
                         </ul>
 
-                        <form method="POST" action="{{ route('plans.select') }}" style="margin-top: auto;">
+                        <form method="POST" action="{{ route('plans.select') }}" style="margin-top: auto;" onsubmit="try { localStorage.setItem('fieldShiftPlanId', '{{ $plan['id'] }}'); localStorage.setItem('fieldShiftPlanCode', '{{ $plan['plan_code'] }}'); } catch(e){}">
                             @csrf
                             @if ($farm)
                                 <input type="hidden" name="farm_id" value="{{ $farm->id }}">

@@ -26,12 +26,15 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::get('/my-farm', [MyFarmController::class, 'index'])->name('farm.index');
+    Route::get('/simulation', [MyFarmController::class, 'index'])->name('farm.simulation');
     Route::post('/my-farm/plots/{fieldId}/crop', [MyFarmController::class, 'assignCrop'])
         ->name('farm.plots.crop.assign');
     Route::delete('/my-farm/plots/{fieldId}/crop', [MyFarmController::class, 'removeCrop'])
         ->name('farm.plots.crop.remove');
     Route::post('/my-farm/farms/{farm}/simulations', [SimulationController::class, 'store'])
         ->name('farm.simulations.store');
+    Route::post('/my-farm/farms/{farm}/simulations/record', [SimulationController::class, 'recordResult'])
+        ->name('farm.simulations.record');
     Route::post('/my-farm/simulations/{simulation}/run', [SimulationController::class, 'run'])
         ->name('farm.simulations.run');
     Route::get('/my-farm/simulations/{simulation}', [SimulationController::class, 'show'])

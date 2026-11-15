@@ -328,6 +328,72 @@ class SimulationController extends Controller
         ]);
     }
 
+    public function recordResult(Request $request, Farm $farm)
+    {
+        abort_unless($farm->status === 'active', 404, 'Farm not found.');
+        abort_unless((int) $farm->user_id === (int) $request->user()->id, 403, 'You do not own this farm.');
+
+        $data = $request->validate([
+            'name' => ['nullable', 'string', 'max:120'],
+            'results' => ['required', 'array'],
+            'planting_season' => ['nullable', 'string'],
+            'duration_days' => ['nullable', 'integer'],
+            'area_ha' => ['nullable', 'numeric'],
+            'settings' => ['nullable', 'array'],
+        ]);
+
+        $userId = $request->user()->id;
+        $selectedPlan = CropPlan::query()
+            ->where('farm_id', $farm->id)
+            ->where('status', 'selected')
+            ->latest('id')
+            ->first();
+
+        // Mark previous running or completed simulations as stale
+        Simulation::query()
+            ->where('user_id', $userId)
+            ->where('farm_id', $farm->id)
+            ->whereIn('status', ['running', 'completed'])
+            ->update([
+                'status' => 'stale',
+                'finished_at' => now(),
+            ]);
+
+        $plots = $farm->fields()->with('crop')->get()->map(fn ($f) => [
+            'id' => $f->id,
+            'name' => $f->name,
+            'crop_id' => $f->crop_id,
+            'crop_name' => $f->crop?->name,
+            'area' => $f->area,
+        ])->all();
+
+        $simulation = Simulation::create([
+            'user_id' => $userId,
+            'farm_id' => $farm->id,
+            'selected_plan_id' => $selectedPlan?->id,
+            'name' => $data['name'] ?? ($selectedPlan?->name ?? 'Simulation Run'),
+            'status' => 'completed',
+            'stage' => 'saving',
+            'settings' => array_merge($selectedPlan?->settings ?? [], $data['settings'] ?? [
+                'planting_season' => $data['planting_season'] ?? $farm->target_season ?? 'winter',
+                'duration_days' => $data['duration_days'] ?? 150,
+            ]),
+            'plots' => $plots,
+            'results' => $data['results'],
+            'started_at' => now()->subSeconds(2),
+            'finished_at' => now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'simulation' => [
+                'id' => $simulation->id,
+                'status' => $simulation->status,
+                'results' => $simulation->results,
+            ],
+        ]);
+    }
+
     private function ensureOwned(Simulation $simulation, Request $request): void
     {
         $farm = $simulation->farm;

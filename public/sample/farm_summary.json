@@ -1,0 +1,24 @@
+{
+  "farm_id": "sample_farm_001",
+  "location": {
+    "country": "Egypt",
+    "governorate": "Monufia",
+    "latitude": 30.56,
+    "longitude": 31.16
+  },
+  "farm_area_hectares": 10,
+  "soil": {
+    "type": "clay",
+    "texture": "clay"
+  },
+  "current_crop": "wheat",
+  "crop_history": ["corn", "wheat"],
+  "planting_date": "2026-11-01",
+  "analysis_period": {
+    "start_date": "2024-01-01",
+    "end_date": "2026-11-14"
+  },
+  "irrigation": null,
+  "priorities": ["water_efficiency", "soil_health"],
+  "_note": "Illustrative test data only; not a verified farm record."
+}
