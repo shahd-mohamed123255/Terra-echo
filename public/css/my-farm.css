@@ -76,3 +76,271 @@
 .chat-note{text-align:center;font-size:11px;color:#7f93a8;margin:8px 0 10px}
 
 @media (max-width:600px){.chat-panel{right:8px;left:8px;width:auto;top:70px}}
+
+.farm-map-card {
+    padding: 22px;
+    background: rgba(13, 27, 46, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 18px;
+}
+
+.farm-map-card h2 {
+    margin: 0 0 8px;
+    font-size: 1.45rem;
+}
+
+.farm-map {
+    width: 100%;
+    height: 480px;
+    min-height: 0;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 14px;
+    background: #182a3d;
+    z-index: 1;
+}
+
+.farm-map[hidden] {
+    display: none;
+}
+
+.farm-map-message {
+    margin: 16px 0;
+    padding: 18px;
+    color: #d7e5f2;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+}
+
+.farm-map-message[hidden] {
+    display: none;
+}
+
+.farm-map-layers {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+}
+
+.farm-map-layer {
+    flex: 0 0 auto;
+    padding: 9px 12px;
+    color: #c5d3e2;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    font: inherit;
+    font-size: 0.8rem;
+}
+
+.farm-map-layer.is-active {
+    color: #102033;
+    background: #f5c542;
+    border-color: #f5c542;
+    font-weight: 600;
+}
+
+.farm-map-layer:disabled {
+    color: #8293a5;
+    cursor: not-allowed;
+}
+
+.farm-map-layer span {
+    margin-left: 4px;
+    font-size: 0.68rem;
+}
+
+.farm-map-summary {
+    margin: 14px 0 0;
+    color: #e6eef7;
+    font-size: 0.9rem;
+}
+
+.farm-map-caption {
+    margin: 8px 0 0;
+    color: #9fb3c8;
+    font-size: 0.78rem;
+}
+
+.leaflet-tooltip.farm-plot-label {
+    display: grid;
+    justify-items: center;
+    gap: 1px;
+    width: max-content;
+    max-width: 110px;
+    padding: 3px 6px;
+    color: #fff;
+    text-align: center;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.15;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
+    background: rgba(8, 19, 32, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 6px;
+    box-shadow: none;
+    pointer-events: none;
+}
+
+.leaflet-tooltip.farm-plot-label::before {
+    display: none;
+}
+
+.leaflet-tooltip.farm-plot-label strong,
+.leaflet-tooltip.farm-plot-label span {
+    display: block;
+    max-width: 100%;
+}
+
+.leaflet-tooltip.farm-plot-label strong {
+    font-size: 0.72rem;
+}
+
+.leaflet-tooltip.farm-plot-label span {
+    font-size: 0.66rem;
+}
+
+.farm-plot-popup p {
+    margin: 6px 0;
+}
+
+.farm-plot-remove {
+    margin-top: 8px;
+    padding: 7px 10px;
+    color: #8d1d2b;
+    background: #ffe4e8;
+    border: 1px solid #f4a8b3;
+    border-radius: 7px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.8rem;
+}
+
+.farm-data-cards {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 18px;
+}
+
+.farm-data-card,
+.selected-crops {
+    padding: 16px;
+    color: #fff;
+    background: rgba(13, 27, 46, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+}
+
+.farm-data-card h2,
+.selected-crops h3 {
+    margin: 0 0 12px;
+    font-size: 1rem;
+}
+
+.farm-data-card dl {
+    display: grid;
+    gap: 9px;
+    margin: 0;
+}
+
+.farm-data-card dl > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 0.8rem;
+}
+
+.farm-data-card dt {
+    color: #9fb3c8;
+}
+
+.farm-data-card dd {
+    margin: 0;
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
+.selected-crops {
+    margin: 16px 0;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.selected-crops h3 {
+    margin-bottom: 10px;
+}
+
+.selected-crops-list {
+    display: grid;
+    gap: 8px;
+}
+
+.selected-crop-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 9px 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 9px;
+}
+
+.selected-crop-item > div {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+}
+
+.selected-crop-item strong {
+    font-size: 0.82rem;
+    overflow-wrap: anywhere;
+}
+
+.selected-crop-item span,
+.selected-crops-empty {
+    color: #9fb3c8;
+    font-size: 0.75rem;
+}
+
+.selected-crops-empty {
+    margin: 0;
+}
+
+.selected-crop-remove {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    color: #ffb3c1;
+    background: rgba(255, 179, 193, 0.08);
+    border: 1px solid rgba(255, 179, 193, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+    font: inherit;
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.selected-crop-remove:disabled {
+    opacity: 0.5;
+    cursor: wait;
+}
+
+@media (max-width: 600px) {
+    .myfarm { padding-right: 16px; padding-left: 16px; }
+    .farm-map-card { padding: 16px; }
+    .farm-map { height: 360px; }
+}
+
+@media (max-width: 800px) {
+    .farm-data-cards {
+        grid-template-columns: 1fr;
+    }
+}

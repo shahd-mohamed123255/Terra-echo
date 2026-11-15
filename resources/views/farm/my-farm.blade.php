@@ -5,10 +5,32 @@
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/my-farm.css') }}">
     <link rel="stylesheet" href="{{ asset('css/crop-library.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 @endpush
 
 @push('scripts')
     <script src="{{ asset('js/chat.js') }}"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    @php
+        $myFarmMapData = [
+            'latitude' => $farm->latitude,
+            'longitude' => $farm->longitude,
+            'area' => $farm->area,
+            'areaUnit' => $farm->area_unit,
+            'plots' => $plots->map(fn ($plot) => [
+                'id' => $plot->id,
+                'name' => $plot->name,
+                'area' => $plot->area,
+                'status' => $plot->status,
+                'crop' => $plot->crop ? ['id' => $plot->crop->id, 'name' => $plot->crop->name] : null,
+                'assignUrl' => route('farm.plots.crop.assign', ['fieldId' => $plot->id]),
+                'removeUrl' => route('farm.plots.crop.remove', ['fieldId' => $plot->id]),
+            ])->values(),
+        ];
+    @endphp
+    <script>
+        window.myFarmMapData = @json($myFarmMapData);
+    </script>
     <script src="{{ asset('js/crop-library.js') }}"></script>
 @endpush
 
@@ -38,33 +60,65 @@
         <div><small>Farm Name</small>{{ $farm->city }} Farm</div>
         <div><small>Location</small>{{ collect([$farm->city, $farm->governorate, $farm->country])->filter()->implode(', ') }}</div>
         <div><small>Total Area</small>{{ $farm->area + 0 }} {{ $farm->area_unit }}</div>
-        <div><small>Soil</small>{{ $farm->soilType?->name ?? 'Requires local input' }}</div>
+        <div><small>Soil</small>{{ $farm->soilType?->name ?? 'Awaiting data' }}</div>
         <div><small>Last Update</small>{{ $farm->updated_at->format('d M Y · H:i') }}</div>
     </div>
 
     <div class="myfarm-layout">
-        <section class="myfarm-primary" aria-labelledby="plots-title">
-            <h2 id="plots-title">Your Plots</h2>
-            <p class="plot-selection-hint" id="plot-selection-hint">Choose a crop from the library, then select a plot.</p>
-            <p class="plot-request-message" id="plot-request-message" role="status" aria-live="polite" hidden></p>
+        <section class="myfarm-primary" aria-labelledby="farm-map-title">
+            <div class="farm-map-card">
+                <h2 id="farm-map-title">Your farm, from above</h2>
+                <p class="plot-selection-hint" id="plot-selection-hint">Choose a crop from the library, then select a plot.</p>
+                <p class="plot-request-message" id="plot-request-message" role="status" aria-live="polite" hidden></p>
 
-            <div class="plot-grid">
-                @foreach ($plots as $plot)
-                    <article
-                        class="plot-card"
-                        data-assign-url="{{ route('farm.plots.crop.assign', ['fieldId' => $plot->id]) }}"
-                        data-remove-url="{{ route('farm.plots.crop.remove', ['fieldId' => $plot->id]) }}"
-                    >
-                        <button class="plot-card-select" type="button" disabled>
-                            <span class="plot-card-name">{{ $plot->name }}</span>
-                            <span class="plot-card-crop" data-plot-crop>{{ $plot->crop?->name ?? 'Empty' }}</span>
-                        </button>
-                        <button class="plot-card-remove" type="button" @if (! $plot->crop) hidden @endif>
-                            Remove crop
-                        </button>
-                    </article>
-                @endforeach
+                @if ($farm->latitude !== null && $farm->longitude !== null)
+                    <div id="farm-map" class="farm-map" role="region" aria-label="Satellite map with your farm plots"></div>
+                    <p class="farm-map-message" id="farm-map-message" role="status" hidden></p>
+                @else
+                    <p class="farm-map-message">Your farm map will appear here once its location has been saved.</p>
+                @endif
+
+                <div class="farm-map-layers" role="tablist" aria-label="Map layers">
+                    <button class="farm-map-layer is-active" type="button" role="tab" aria-selected="true">Satellite View</button>
+                    <button class="farm-map-layer" type="button" role="tab" aria-disabled="true" disabled>Soil Moisture <span>Awaiting data</span></button>
+                    <button class="farm-map-layer" type="button" role="tab" aria-disabled="true" disabled>Soil Health <span>Awaiting data</span></button>
+                    <button class="farm-map-layer" type="button" role="tab" aria-disabled="true" disabled>Vegetation Health <span>Awaiting data</span></button>
+                    <button class="farm-map-layer" type="button" role="tab" aria-disabled="true" disabled>Water Availability <span>Awaiting data</span></button>
+                </div>
+
+                <p class="farm-map-summary" id="farm-map-summary" aria-live="polite"></p>
+                <p class="farm-map-caption">Approximate plot layout, not a surveyed boundary</p>
             </div>
+
+            <section class="farm-data-cards" aria-label="Farm conditions">
+                <article class="farm-data-card">
+                    <h2>Soil</h2>
+                    <dl>
+                        <div><dt>Soil type</dt><dd>{{ $farm->soilType?->name ?? 'Awaiting data' }}</dd></div>
+                        <div><dt>pH</dt><dd>{{ $farm->soilReport?->ph ?? 'Awaiting data' }}</dd></div>
+                        <div><dt>Salinity</dt><dd>{{ $farm->soilReport?->salinity ?? 'Awaiting data' }}</dd></div>
+                        <div><dt>Nitrogen</dt><dd>{{ $farm->soilReport?->nitrogen ?? 'Awaiting data' }}</dd></div>
+                        <div><dt>Phosphorus</dt><dd>{{ $farm->soilReport?->phosphorus ?? 'Awaiting data' }}</dd></div>
+                        <div><dt>Potassium</dt><dd>{{ $farm->soilReport?->potassium ?? 'Awaiting data' }}</dd></div>
+                    </dl>
+                </article>
+
+                <article class="farm-data-card">
+                    <h2>Water</h2>
+                    <dl>
+                        <div><dt>Irrigation source</dt><dd>{{ $farm->irrigation_source ?: 'Awaiting data' }}</dd></div>
+                        <div><dt>Water availability</dt><dd>Awaiting data</dd></div>
+                    </dl>
+                </article>
+
+                <article class="farm-data-card">
+                    <h2>Climate</h2>
+                    <dl>
+                        <div><dt>Climate observations</dt><dd>Awaiting data</dd></div>
+                        <div><dt>Farm agent ID</dt><dd>{{ $farm->agent_farmer_id ?: 'Awaiting data' }}</dd></div>
+                    </dl>
+                </article>
+            </section>
         </section>
 
         <aside class="crop-library" aria-labelledby="crop-library-title">
@@ -79,6 +133,28 @@
                     autocomplete="off"
                 >
             </div>
+
+            <section class="selected-crops" aria-labelledby="selected-crops-title">
+                <h3 id="selected-crops-title">Selected Crops</h3>
+                <div class="selected-crops-list" id="selected-crops-list" aria-live="polite">
+                    @forelse ($plots->filter(fn ($plot) => $plot->crop)->values() as $plot)
+                        <article class="selected-crop-item" data-selected-plot="{{ $plot->id }}">
+                            <div>
+                                <strong>{{ $plot->name }} · {{ $plot->crop->name }}</strong>
+                                <span>{{ $plot->area }} {{ $farm->area_unit }}</span>
+                            </div>
+                            <button
+                                class="selected-crop-remove"
+                                type="button"
+                                data-plot-id="{{ $plot->id }}"
+                                aria-label="Remove {{ $plot->crop->name }} from {{ $plot->name }}"
+                            >×</button>
+                        </article>
+                    @empty
+                        <p class="selected-crops-empty">No crops selected yet.</p>
+                    @endforelse
+                </div>
+            </section>
 
             <div class="crop-library-filters" aria-label="Filter crops by category">
                 <button class="crop-category-chip is-active" type="button" data-category-filter="all" aria-pressed="true">All</button>

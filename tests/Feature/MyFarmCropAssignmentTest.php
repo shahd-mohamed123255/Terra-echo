@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Crop;
 use App\Models\Farm;
 use App\Models\Field;
+use App\Models\SoilType;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -88,11 +89,15 @@ class MyFarmCropAssignmentTest extends TestCase
         ]);
     }
 
-    public function test_the_active_farm_page_displays_the_plot_cards(): void
+    public function test_the_active_farm_page_displays_the_satellite_plot_map(): void
     {
         $user = User::factory()->create();
         $farm = $this->createFarm($user);
-        $farm->update(['area' => 4]);
+        $farm->update([
+            'area' => 4,
+            'latitude' => 29.9876543,
+            'longitude' => 31.1234567,
+        ]);
         Crop::create(['name' => 'Wheat', 'slug' => 'wheat']);
 
         $response = $this->actingAs($user)
@@ -102,11 +107,71 @@ class MyFarmCropAssignmentTest extends TestCase
 
         $response
             ->assertOk()
-            ->assertSee('Your Plots')
+            ->assertSee('Your farm, from above')
+            ->assertSee('id="farm-map"', false)
+            ->assertSee('Satellite View')
+            ->assertSee('Approximate plot layout, not a surveyed boundary')
             ->assertSee('P1')
             ->assertSee('P4')
             ->assertSee('Wheat')
-            ->assertSee(route('farm.plots.crop.assign', ['fieldId' => $field->id]), false);
+            ->assertSee(str_replace('/', '\\/', route('farm.plots.crop.assign', ['fieldId' => $field->id])), false);
+    }
+
+    public function test_the_active_farm_page_explains_when_location_is_missing(): void
+    {
+        $user = User::factory()->create();
+        $farm = $this->createFarm($user);
+        $farm->update(['area' => 4]);
+
+        $this->actingAs($user)
+            ->get(route('farm.index'))
+            ->assertOk()
+            ->assertSee('Your farm map will appear here once its location has been saved.')
+            ->assertDontSee('id="farm-map"', false);
+    }
+
+    public function test_the_active_farm_page_shows_selected_crops_and_saved_condition_data(): void
+    {
+        $user = User::factory()->create();
+        $farm = $this->createFarm($user);
+        $soilType = SoilType::forceCreate([
+            'name' => 'Clay',
+            'slug' => 'clay',
+        ]);
+        $farm->update([
+            'area' => 4,
+            'soil_type_id' => $soilType->id,
+            'irrigation_source' => 'Well',
+        ]);
+        $farm->soilReport()->create([
+            'ph' => 6.5,
+            'salinity' => 1.2,
+            'nitrogen' => 30,
+            'phosphorus' => 12,
+            'potassium' => 20,
+        ]);
+        $crop = Crop::create(['name' => 'Wheat', 'slug' => 'wheat']);
+        Field::create([
+            'farm_id' => $farm->id,
+            'crop_id' => $crop->id,
+            'name' => 'P1',
+            'area' => 1,
+            'status' => 'planted',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('farm.index'))
+            ->assertOk()
+            ->assertSee('Selected Crops')
+            ->assertSee('P1 · Wheat')
+            ->assertSee('aria-label="Remove Wheat from P1"', false)
+            ->assertSee('Soil type')
+            ->assertSee('Clay')
+            ->assertSee('Irrigation source')
+            ->assertSee('Well')
+            ->assertSee('Climate observations')
+            ->assertSee('Farm agent ID')
+            ->assertSee('Awaiting data');
     }
 
     private function createFarm(User $user, string $status = 'active'): Farm
