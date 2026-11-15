@@ -106,7 +106,7 @@ class FarmController extends Controller
         $user = $request->user();
 
         DB::transaction(function () use ($user, $farm, $data) {
-            $user->update(['plan' => $data['plan']]);
+            $user->update(['plan' => strtolower($data['plan'])]);
             $farm->update(['status' => 'active']);
         });
 
