@@ -10,6 +10,8 @@ class Simulation extends Model
     protected $fillable = [
         'user_id',
         'farm_id',
+        'selected_plan_id',
+        'chat_conversation_id',
         'name',
         'status',
         'settings',
@@ -40,5 +42,15 @@ class Simulation extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function selectedPlan(): BelongsTo
+    {
+        return $this->belongsTo(CropPlan::class, 'selected_plan_id');
+    }
+
+    public function chatConversation(): BelongsTo
+    {
+        return $this->belongsTo(ChatConversation::class);
     }
 }

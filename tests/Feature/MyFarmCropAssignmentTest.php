@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Crop;
+use App\Models\CropPlan;
 use App\Models\Farm;
 use App\Models\Field;
 use App\Models\Simulation;
@@ -88,6 +89,37 @@ class MyFarmCropAssignmentTest extends TestCase
             'crop_id' => null,
             'status' => 'fallow',
         ]);
+    }
+
+    public function test_changing_a_crop_marks_the_current_plan_and_running_results_stale(): void
+    {
+        $user = User::factory()->create();
+        $farm = $this->createFarm($user);
+        $field = $this->createField($farm);
+        $plan = CropPlan::create([
+            'user_id' => $user->id,
+            'farm_id' => $farm->id,
+            'settings' => ['planting_season' => 'spring'],
+            'plots' => [],
+            'status' => 'selected',
+        ]);
+        $simulation = Simulation::create([
+            'user_id' => $user->id,
+            'farm_id' => $farm->id,
+            'selected_plan_id' => $plan->id,
+            'status' => 'running',
+            'settings' => [],
+            'plots' => [],
+        ]);
+        $crop = Crop::create(['name' => 'Wheat', 'slug' => 'wheat']);
+
+        $this->actingAs($user)
+            ->postJson(route('farm.plots.crop.assign', $field), ['crop_id' => $crop->id])
+            ->assertOk();
+
+        $this->assertSame('stale', $simulation->fresh()->status);
+        $this->assertSame('stale', $plan->fresh()->status);
+        $this->assertNotNull($simulation->fresh()->finished_at);
     }
 
     public function test_the_active_farm_page_displays_the_satellite_plot_map(): void
@@ -203,11 +235,11 @@ class MyFarmCropAssignmentTest extends TestCase
             'settings' => [],
             'plots' => [],
             'results' => [
-                'plots' => [[
-                    'name' => $plot->name,
-                    'suitability_pct' => null,
-                    'seasonal_water_demand_m3' => 42,
-                    'comment' => null,
+                'sequence' => [[
+                    'plot_id' => $plot->id,
+                    'plot_name' => $plot->name,
+                    'suitability' => ['status' => 'screening_suitable'],
+                    'estimated_net_irrigation_demand_m3' => 42,
                 ]],
             ],
         ]);
@@ -222,7 +254,7 @@ class MyFarmCropAssignmentTest extends TestCase
         $this->actingAs($user)
             ->get(route('farm.index'))
             ->assertOk()
-            ->assertSee('"simulationPlots":[{"name":"P1","suitability_pct":null,"seasonal_water_demand_m3":42,"comment":null}]', false);
+            ->assertSee('"simulationPlots":[{"plot_id":'.$plot->id.',"plot_name":"P1","suitability":{"status":"screening_suitable"},"estimated_net_irrigation_demand_m3":42}]', false);
     }
 
     private function createFarm(User $user, string $status = 'active'): Farm

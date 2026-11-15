@@ -20,7 +20,7 @@ class SimulationScenarioTest extends TestCase
         $farm = $this->createFarm($user);
         $plot = $this->createPlantedPlot($farm);
 
-        $this->actingAs($user)
+        $response = $this->actingAs($user)
             ->postJson($this->storeUrl($farm), $this->validScenario([$plot->id]))
             ->assertOk()
             ->assertJsonPath('success', true)
@@ -30,10 +30,18 @@ class SimulationScenarioTest extends TestCase
             ->assertJsonPath('simulation.plots.0.id', $plot->id)
             ->assertJsonPath('simulation.plots.0.crop_name', 'Wheat');
 
+        $planId = $response->json('simulation.selected_plan_id');
         $this->assertDatabaseHas('simulations', [
             'farm_id' => $farm->id,
             'user_id' => $user->id,
             'status' => 'pending',
+            'selected_plan_id' => $planId,
+        ]);
+        $this->assertDatabaseHas('crop_plans', [
+            'id' => $planId,
+            'farm_id' => $farm->id,
+            'user_id' => $user->id,
+            'status' => 'selected',
         ]);
     }
 
@@ -141,7 +149,45 @@ class SimulationScenarioTest extends TestCase
             $firstResponse->json('simulation.id'),
             $secondResponse->json('simulation.id')
         );
+        $this->assertSame(
+            $firstResponse->json('simulation.selected_plan_id'),
+            $secondResponse->json('simulation.selected_plan_id')
+        );
         $this->assertSame(1, Simulation::query()->where('farm_id', $farm->id)->count());
+    }
+
+    public function test_changing_a_saved_plan_marks_previous_results_stale_without_deleting_them(): void
+    {
+        $user = User::factory()->create();
+        $farm = $this->createFarm($user);
+        $plot = $this->createPlantedPlot($farm);
+
+        $first = $this->actingAs($user)
+            ->postJson($this->storeUrl($farm), $this->validScenario([$plot->id]))
+            ->assertOk()
+            ->json('simulation');
+        $oldResults = ['estimated_net_irrigation_demand_m3' => 1234];
+        Simulation::query()->whereKey($first['id'])->update([
+            'status' => 'completed',
+            'results' => $oldResults,
+        ]);
+        $nextScenario = $this->validScenario([$plot->id]);
+        $nextScenario['duration_days']++;
+
+        $second = $this->postJson($this->storeUrl($farm), $nextScenario)
+            ->assertOk()
+            ->json('simulation');
+
+        $this->assertNotSame($first['selected_plan_id'], $second['selected_plan_id']);
+        $this->assertDatabaseHas('simulations', [
+            'id' => $first['id'],
+            'status' => 'stale',
+        ]);
+        $this->assertSame($oldResults, Simulation::query()->findOrFail($first['id'])->results);
+        $this->assertDatabaseHas('crop_plans', [
+            'id' => $first['selected_plan_id'],
+            'status' => 'superseded',
+        ]);
     }
 
     private function validScenario(array $plotIds): array

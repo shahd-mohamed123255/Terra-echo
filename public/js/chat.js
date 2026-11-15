@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const input   = document.getElementById('chatInput');
     const sendBtn = document.getElementById('chatSend');
     const csrf    = document.querySelector('meta[name="csrf-token"]')?.content;
+    const farmId  = window.myFarmScenarioData?.farmId ?? null;
 
     if (!panel || !toggle || !csrf) {
         console.error('Chat: missing element or csrf meta tag');
@@ -64,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function startChat() {
         setBusy(true);
         try {
-            const { status, json } = await post('/chat/start');
+            const { status, json } = await post('/chat/start', { farm_id: farmId });
             if (json && json.success) {
                 started = true;
                 json.messages.forEach(m => addMessage(m.role, m.content));
@@ -84,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
         input.value = '';
         setBusy(true);
         try {
-            const { status, json } = await post('/chat/message', { message: text });
+            const { status, json } = await post('/chat/message', { message: text, farm_id: farmId });
             if (json && json.success) {
                 addMessage('assistant', json.data.reply);
             } else {

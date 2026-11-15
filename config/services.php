@@ -36,7 +36,8 @@ return [
     ],
 
     'agent' => [
-        'url' => env('AGENT_API_URL', 'http://127.0.0.1:8001'),
+        'url' => env('AGENT_BASE_URL', ''),
+        'token' => env('AGENT_API_TOKEN'),
         'simulation_timeout' => (int) env('AGENT_SIMULATION_TIMEOUT', 60),
     ],
 

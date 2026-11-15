@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Crop;
+use App\Models\CropPlan;
 use App\Models\Field;
 use App\Models\Simulation;
 use Illuminate\Http\Request;
@@ -100,6 +101,7 @@ class MyFarmController extends Controller
             'crop_id' => $validator->validated()['crop_id'],
             'status' => 'planted',
         ]);
+        $this->markFarmSimulationsStale($field->farm_id);
 
         return response()->json([
             'success' => true,
@@ -118,6 +120,7 @@ class MyFarmController extends Controller
             'crop_id' => null,
             'status' => 'fallow',
         ]);
+        $this->markFarmSimulationsStale($field->farm_id);
 
         return response()->json([
             'success' => true,
@@ -135,5 +138,22 @@ class MyFarmController extends Controller
                 ? ['id' => $field->crop->id, 'name' => $field->crop->name]
                 : null,
         ];
+    }
+
+    private function markFarmSimulationsStale(int $farmId): void
+    {
+        CropPlan::query()
+            ->where('farm_id', $farmId)
+            ->where('status', 'selected')
+            ->update(['status' => 'stale']);
+
+        Simulation::query()
+            ->where('farm_id', $farmId)
+            ->whereIn('status', ['running', 'completed'])
+            ->update([
+                'status' => 'stale',
+                'error' => 'Farm crop assignments changed; save and run a new plan for current results.',
+                'finished_at' => now(),
+            ]);
     }
 }

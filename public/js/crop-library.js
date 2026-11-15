@@ -220,10 +220,15 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelector('#plot-details-crop').textContent = plot.crop?.name || 'Empty';
         document.querySelector('#plot-details-status').textContent = plot.status || 'Awaiting data';
 
-        const insight = simulationPlots.find((item) => item?.name === plot.name);
-        document.querySelector('#plot-details-suitability').textContent = insight?.suitability_pct ?? 'Awaiting data';
-        document.querySelector('#plot-details-water').textContent = insight?.seasonal_water_demand_m3 ?? 'Awaiting data';
-        document.querySelector('#plot-details-comment').textContent = insight?.comment ?? 'Awaiting data';
+        const insight = simulationPlots.find((item) =>
+            String(item?.plot_id) === String(plot.id) || item?.plot_name === plot.name
+        );
+        document.querySelector('#plot-details-suitability').textContent =
+            insight?.suitability?.status ?? insight?.suitability_pct ?? 'Awaiting data';
+        document.querySelector('#plot-details-water').textContent =
+            insight?.estimated_net_irrigation_demand_m3 ?? insight?.seasonal_water_demand_m3 ?? 'Awaiting data';
+        document.querySelector('#plot-details-comment').textContent =
+            insight?.suitability?.reason ?? insight?.comment ?? 'Awaiting data';
         plotDetailsRemove.hidden = !plot.crop;
         plotDetailsRemove.disabled = Boolean(plot.pending);
     }
@@ -379,7 +384,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const canRun = Boolean(activeSimulationId)
             && scenarioFormIsSaved()
             && scenarioPlotsAreSaved()
-            && scenarioData.simulation?.status !== 'running';
+            && !['running', 'stale'].includes(scenarioData.simulation?.status);
         scenarioRunButton.disabled = !canRun;
         scenarioRunButton.title = canRun
             ? 'Run the saved scenario'
@@ -509,25 +514,33 @@ document.addEventListener('DOMContentLoaded', () => {
         insightsGrid.hidden = false;
         const summary = document.querySelector('#insight-summary');
         if (summary) {
-            summary.textContent = formatInsightValue(results.summary) || '';
+            summary.textContent = [
+                results.simulation_id ? `Simulation #${results.simulation_id}` : null,
+                results.selected_plan_id ? `Plan #${results.selected_plan_id}` : null,
+                results.farm_id ? `Farm #${results.farm_id}` : null,
+            ].filter(Boolean).join(' · ');
             summary.hidden = !summary.textContent;
         }
         insightsGrid.querySelectorAll('[data-insight-field]').forEach((container) => {
             const key = container.dataset.insightField;
             const value = ({
-                water_demand: results.water?.monthly,
-                soil_compatibility: results.soil?.compatibility,
-                scenario_comparison: results.scenarios,
-                climate_risk: results.climate,
-                ai_recommendations: results.recommendations,
-                crop_rotation: results.rotation,
+                water_demand: {
+                    estimated_net_irrigation_demand_mm: results.estimated_net_irrigation_demand_mm,
+                    estimated_net_irrigation_demand_m3: results.estimated_net_irrigation_demand_m3,
+                },
+                water_balance: {
+                    adjusted_available_irrigation_mm: results.adjusted_available_irrigation_mm,
+                    estimated_water_deficit_mm: results.estimated_water_deficit_mm,
+                    estimated_water_deficit_m3: results.estimated_water_deficit_m3,
+                    relative_water_stress_indicator: results.relative_water_stress_indicator,
+                },
+                sources_and_tools: {
+                    data_sources: results.data_sources,
+                    tools_used: results.tools_used,
+                },
             })[key] ?? results[key];
 
-            if (key === 'water_demand') {
-                renderWaterChart(container, value);
-            } else {
-                renderInsightValue(container, value);
-            }
+            renderInsightValue(container, value);
         });
 
         const soilValues = window.myFarmSoilValues || {};
@@ -629,6 +642,14 @@ document.addEventListener('DOMContentLoaded', () => {
             updateRunAvailability();
             return;
         }
+        if (state.status === 'stale') {
+            renderInsights(null);
+            if (scenarioOverlay) {
+                scenarioOverlay.hidden = true;
+            }
+            updateRunAvailability();
+            return;
+        }
 
         if (scenarioOverlayError) {
             scenarioOverlayError.textContent = state.error || 'Simulation failed.';
@@ -668,7 +689,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 showSimulationStage(state.stage);
                 return;
             }
-            if (['completed', 'failed', 'cancelled'].includes(state.status)) {
+            if (['completed', 'failed', 'cancelled', 'stale'].includes(state.status)) {
                 finishSimulation(state);
             }
         } catch (error) {

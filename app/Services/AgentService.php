@@ -20,24 +20,20 @@ class AgentService
 
     public function health(): array
     {
-        return $this->request('GET', '/api/health', [], 5);
+        return $this->request('GET', '/health', [], 5);
     }
 
-    public function start(string $farmerId, ?string $name = null, string $language = 'ar'): array
+    public function start(array $summary): array
     {
-        return $this->request('POST', '/api/agent/start', array_filter([
-            'farmer_id' => $farmerId,
-            'name' => $name,
-            'language' => $language,
-        ]), 30);
+        return $this->request('POST', '/api/agent/start', ['summary' => $summary], 30);
     }
 
-    public function chat(string $farmerId, string $conversationId, string $message): array
+    public function chat(string $conversationId, string $message, array $summary): array
     {
         return $this->request('POST', '/api/agent/chat', [
-            'farmer_id' => $farmerId,
             'conversation_id' => $conversationId,
             'message' => $message,
+            'summary' => $summary,
         ], 60);
     }
 
@@ -56,12 +52,14 @@ class AgentService
         }
 
         $timeout = max(1, (int) config('services.agent.simulation_timeout', 60));
+        $input = $mapper->toAgentRequest($simulation, $plots);
 
         try {
             $response = Http::acceptJson()
+                ->withHeaders($this->authorizationHeaders())
                 ->connectTimeout(min(3, $timeout))
                 ->timeout($timeout)
-                ->post($this->baseUrl.'/simulate', $mapper->toAgentRequest($simulation, $plots));
+                ->post($this->baseUrl.'/api/agent/simulate', $input);
         } catch (ConnectionException $exception) {
             $message = strtolower($exception->getMessage());
             $reason = str_contains($message, 'timed out') || str_contains($message, 'timeout')
@@ -98,23 +96,92 @@ class AgentService
             throw new RuntimeException('Invalid agent response');
         }
 
-        return $mapper->fromAgentResponse($payload, (int) $simulation->id);
+        return $mapper->fromAgentResponse($payload, $simulation, $input);
+    }
+
+    public function analyze(array $summary): array
+    {
+        return $this->request('POST', '/api/agent/analyze', ['summary' => $summary], 60);
+    }
+
+    public function recommend(array $summary): array
+    {
+        return $this->request('POST', '/api/agent/recommend', ['summary' => $summary], 60);
+    }
+
+    public function plan(array $summary): array
+    {
+        return $this->request('POST', '/api/agent/plan', ['summary' => $summary], 60);
+    }
+
+    public function compare(array $summary, ?array $strategies = null, ?array $weather = null): array
+    {
+        return $this->request('POST', '/api/agent/compare', array_filter([
+            'summary' => $summary,
+            'strategies' => $strategies,
+            'weather' => $weather,
+        ], fn ($value) => $value !== null), 60);
+    }
+
+    public function predict(array $payload): array
+    {
+        return $this->request('POST', '/api/agent/predict', $payload, 60);
+    }
+
+    public function environmentRetrieve(array $summary, array $parameters = []): array
+    {
+        return $this->request('POST', '/api/agent/environment/retrieve', [
+            'summary' => $summary,
+            'parameters' => $parameters,
+        ], 60);
+    }
+
+    public function knowledgeSearch(string $query, bool $external = false): array
+    {
+        return $this->request('POST', '/api/agent/knowledge/search', [
+            'query' => $query,
+            'external' => $external,
+        ], 60);
     }
 
     protected function request(string $method, string $path, array $data = [], int $timeout = 30): array
     {
+        if ($this->baseUrl === '') {
+            return [
+                'ok' => false,
+                'status' => 503,
+                'code' => 'agent_not_configured',
+                'message' => $this->friendly('agent_not_configured'),
+            ];
+        }
+
         try {
             $options = $method === 'GET' ? [] : ['json' => $data];
 
             $response = Http::acceptJson()
+                ->withHeaders($this->authorizationHeaders())
                 ->connectTimeout(3)
                 ->timeout($timeout)
                 ->send($method, $this->baseUrl.$path, $options);
 
             $json = $response->json();
 
-            if ($response->successful() && ($json['success'] ?? false)) {
-                return ['ok' => true, 'data' => $json['data'] ?? []];
+            if ($response->successful() && ($json['success'] ?? false) === true) {
+                if (! is_array($json['data'] ?? null)) {
+                    Log::warning('Agent returned a success response with an invalid data payload', [
+                        'path' => $path,
+                        'status' => $response->status(),
+                    ]);
+
+                    return [
+                        'ok' => false,
+                        'status' => 502,
+                        'code' => 'invalid_agent_response',
+                        'message' => $this->friendly('invalid_agent_response'),
+                    ];
+                }
+
+                return ['ok' => true, 'data' => $json['data']];
             }
 
             $code = $json['error']['code'] ?? 'unknown_error';
@@ -150,7 +217,9 @@ class AgentService
     protected function friendly(string $code): string
     {
         return match ($code) {
+            'agent_not_configured' => 'أبو قردان مش متصل. راجع إعداد AGENT_BASE_URL.',
             'agent_offline' => 'أبو قردان مش متاح دلوقتي، جرب كمان شوية.',
+            'invalid_agent_response' => 'وصل رد غير صالح من خدمة أبو قردان.',
             'validation_error' => 'الرسالة مش مقبولة، اتأكد إنها مش فاضية وأقل من 2000 حرف.',
             'forbidden' => 'مش مسموح لك بالوصول للمحادثة دي.',
             'farmer_not_found', 'conversation_not_found' => 'المحادثة مش موجودة.',
@@ -158,5 +227,12 @@ class AgentService
             'database_unavailable', 'missing_api_key' => 'الخدمة بتتصلح دلوقتي، جرب بعدين.',
             default => 'حصلت مشكلة غير متوقعة، جرب تاني.',
         };
+    }
+
+    protected function authorizationHeaders(): array
+    {
+        $token = trim((string) config('services.agent.token'));
+
+        return $token === '' ? [] : ['Authorization' => 'Bearer '.$token];
     }
 }

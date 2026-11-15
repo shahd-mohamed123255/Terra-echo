@@ -7,6 +7,10 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## Terra Echo and Abu Qerdan
+
+The existing Laravel application is the platform and source of truth for users, farms, agricultural plans, and simulation runs. Its server connects to the Abu Qerdan FastAPI service through a private, authenticated API client. See [INTEGRATION.md](INTEGRATION.md) for the architecture, environment variables, Windows run commands, and verified integration boundaries.
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:

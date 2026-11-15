@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\RunSimulation;
+use App\Models\ChatConversation;
+use App\Models\CropPlan;
 use App\Models\Farm;
 use App\Models\Simulation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
@@ -157,6 +160,12 @@ class SimulationController extends Controller
             ],
             'water_scenario' => ['required', Rule::in(array_keys($options['water_scenarios']))],
             'climate_scenario' => ['required', Rule::in(array_keys($options['climate_scenarios']))],
+            'seasonal_et0_mm' => ['nullable', 'numeric', 'min:0'],
+            'seasonal_precipitation_mm' => ['nullable', 'numeric', 'min:0'],
+            'seasonal_irrigation_available_mm' => ['nullable', 'numeric', 'min:0'],
+            'rainfall_change_pct' => ['nullable', 'numeric', 'between:-40,40'],
+            'temperature_change_c' => ['nullable', 'numeric', 'between:-4,6'],
+            'water_availability_change_pct' => ['nullable', 'numeric', 'between:-50,30'],
         ], [
             'plot_ids.required' => 'Select at least one plot with an assigned crop.',
             'plot_ids.array' => 'Select at least one plot with an assigned crop.',
@@ -213,6 +222,12 @@ class SimulationController extends Controller
             'duration_days' => (int) $data['duration_days'],
             'water_scenario' => $data['water_scenario'],
             'climate_scenario' => $data['climate_scenario'],
+            'seasonal_et0_mm' => isset($data['seasonal_et0_mm']) ? (float) $data['seasonal_et0_mm'] : null,
+            'seasonal_precipitation_mm' => isset($data['seasonal_precipitation_mm']) ? (float) $data['seasonal_precipitation_mm'] : null,
+            'seasonal_irrigation_available_mm' => isset($data['seasonal_irrigation_available_mm']) ? (float) $data['seasonal_irrigation_available_mm'] : null,
+            'rainfall_change_pct' => isset($data['rainfall_change_pct']) ? (float) $data['rainfall_change_pct'] : 0.0,
+            'temperature_change_c' => isset($data['temperature_change_c']) ? (float) $data['temperature_change_c'] : 0.0,
+            'water_availability_change_pct' => isset($data['water_availability_change_pct']) ? (float) $data['water_availability_change_pct'] : 0.0,
         ];
         $plots = $fields->map(fn ($field) => [
             'id' => $field->id,
@@ -222,18 +237,77 @@ class SimulationController extends Controller
             'area' => $field->area,
         ])->values()->all();
 
-        $simulation = Simulation::updateOrCreate(
-            [
-                'user_id' => $request->user()->id,
-                'farm_id' => $farm->id,
-                'status' => 'pending',
-            ],
-            [
-                'settings' => $settings,
-                'plots' => $plots,
-                'name' => $data['name'] ?? null,
-            ]
-        );
+        $simulation = DB::transaction(function () use ($request, $farm, $settings, $plots, $data) {
+            $userId = (int) $request->user()->id;
+            $pending = Simulation::query()
+                ->where('user_id', $userId)
+                ->where('farm_id', $farm->id)
+                ->where('status', 'pending')
+                ->latest('id')
+                ->lockForUpdate()
+                ->first();
+
+            CropPlan::query()
+                ->where('user_id', $userId)
+                ->where('farm_id', $farm->id)
+                ->where('status', 'selected')
+                ->update(['status' => 'superseded']);
+
+            $plan = $pending?->selectedPlan;
+            if ($plan) {
+                $plan->update([
+                    'name' => $data['name'] ?? null,
+                    'settings' => $settings,
+                    'plots' => $plots,
+                    'status' => 'selected',
+                ]);
+            } else {
+                $plan = CropPlan::create([
+                    'user_id' => $userId,
+                    'farm_id' => $farm->id,
+                    'name' => $data['name'] ?? null,
+                    'settings' => $settings,
+                    'plots' => $plots,
+                    'status' => 'selected',
+                ]);
+            }
+
+            $conversationId = ChatConversation::query()
+                ->where('user_id', $userId)
+                ->where('farm_id', $farm->id)
+                ->latest('id')
+                ->value('id');
+
+            Simulation::query()
+                ->where('user_id', $userId)
+                ->where('farm_id', $farm->id)
+                ->whereIn('status', ['running', 'completed'])
+                ->update([
+                    'status' => 'stale',
+                    'error' => 'Farm or plan inputs changed; run the selected plan to generate current results.',
+                    'finished_at' => now(),
+                ]);
+
+            return Simulation::updateOrCreate(
+                [
+                    'user_id' => $userId,
+                    'farm_id' => $farm->id,
+                    'status' => 'pending',
+                ],
+                [
+                    'selected_plan_id' => $plan->id,
+                    'chat_conversation_id' => $conversationId,
+                    'settings' => $settings,
+                    'plots' => $plots,
+                    'name' => $data['name'] ?? null,
+                    'results' => null,
+                    'error' => null,
+                    'stage' => null,
+                    'started_at' => null,
+                    'finished_at' => null,
+                ]
+            );
+        });
 
         return response()->json([
             'success' => true,
@@ -241,6 +315,7 @@ class SimulationController extends Controller
                 'id' => $simulation->id,
                 'status' => $simulation->status,
                 'name' => $simulation->name,
+                'selected_plan_id' => $simulation->selected_plan_id,
                 'settings' => $simulation->settings,
                 'plots' => $simulation->plots,
             ],
@@ -251,6 +326,11 @@ class SimulationController extends Controller
     {
         $farm = $simulation->farm;
         abort_if($farm === null, 404, 'Farm not found.');
-        abort_unless((int) $farm->user_id === (int) $request->user()->id, 403, 'You do not own this simulation.');
+        abort_unless(
+            (int) $farm->user_id === (int) $request->user()->id
+                && (int) $simulation->user_id === (int) $request->user()->id,
+            403,
+            'You do not own this simulation.'
+        );
     }
 }

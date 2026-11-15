@@ -18,7 +18,7 @@
             'area' => $farm->area,
             'areaUnit' => $farm->area_unit,
             'simulationPlots' => $latestCompletedSimulation
-                ? data_get($latestCompletedSimulation->results, 'plots', [])
+                ? data_get($latestCompletedSimulation->results, 'sequence', [])
                 : [],
             'plots' => $plots->map(fn ($plot) => [
                 'id' => $plot->id,
@@ -32,11 +32,12 @@
         ];
         $myFarmSimulationData = $latestSimulation ? [
             'id' => $latestSimulation->id,
+            'selected_plan_id' => $latestSimulation->selected_plan_id,
             'status' => $latestSimulation->status,
             'stage' => $latestSimulation->stage,
             'error' => $latestSimulation->error,
             'plots' => $latestSimulation->plots,
-            'results' => $latestSimulation->results,
+            'results' => $latestSimulation->status === 'completed' ? $latestSimulation->results : null,
             'started_at' => $latestSimulation->started_at,
             'finished_at' => $latestSimulation->finished_at,
         ] : null;
@@ -49,6 +50,7 @@
             showUrl: @json(route('farm.simulations.show', ['simulation' => '__simulation__'])),
             cancelUrl: @json(route('farm.simulations.cancel', ['simulation' => '__simulation__'])),
             farmName: @json($farm->city . ' Farm'),
+            farmId: @json($farm->id),
             settings: @json($scenarioSettings),
             simulation: @json($myFarmSimulationData),
         };
@@ -276,8 +278,39 @@
                             </select>
                             <span class="scenario-field-error" data-error-for="climate_scenario"></span>
                         </label>
+                        <label>
+                            Seasonal reference ET₀ (mm, optional)
+                            <input type="number" name="seasonal_et0_mm" min="0" step="any" value="{{ $scenarioSettings['seasonal_et0_mm'] ?? '' }}">
+                            <span class="scenario-field-error" data-error-for="seasonal_et0_mm"></span>
+                        </label>
+                        <label>
+                            Seasonal precipitation (mm, optional)
+                            <input type="number" name="seasonal_precipitation_mm" min="0" step="any" value="{{ $scenarioSettings['seasonal_precipitation_mm'] ?? '' }}">
+                            <span class="scenario-field-error" data-error-for="seasonal_precipitation_mm"></span>
+                        </label>
+                        <label>
+                            Available irrigation (mm, optional)
+                            <input type="number" name="seasonal_irrigation_available_mm" min="0" step="any" value="{{ $scenarioSettings['seasonal_irrigation_available_mm'] ?? '' }}">
+                            <span class="scenario-field-error" data-error-for="seasonal_irrigation_available_mm"></span>
+                        </label>
+                        <label>
+                            Rainfall change (%)
+                            <input type="number" name="rainfall_change_pct" min="-40" max="40" step="any" value="{{ $scenarioSettings['rainfall_change_pct'] ?? 0 }}">
+                            <span class="scenario-field-error" data-error-for="rainfall_change_pct"></span>
+                        </label>
+                        <label>
+                            Temperature change (°C)
+                            <input type="number" name="temperature_change_c" min="-4" max="6" step="any" value="{{ $scenarioSettings['temperature_change_c'] ?? 0 }}">
+                            <span class="scenario-field-error" data-error-for="temperature_change_c"></span>
+                        </label>
+                        <label>
+                            Water availability change (%)
+                            <input type="number" name="water_availability_change_pct" min="-50" max="30" step="any" value="{{ $scenarioSettings['water_availability_change_pct'] ?? 0 }}">
+                            <span class="scenario-field-error" data-error-for="water_availability_change_pct"></span>
+                        </label>
                     </div>
 
+                    <p class="scenario-description">Optional weather and irrigation values are not estimated from sample data. Leave them blank when no verified measurements are available; the result will report what cannot be calculated.</p>
                     <p class="scenario-message" id="scenario-message" role="status" aria-live="polite" hidden></p>
                     <div class="scenario-actions">
                         <button class="scenario-reset" type="reset">Reset Configuration</button>

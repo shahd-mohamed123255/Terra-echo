@@ -19,6 +19,12 @@ class SimulationRunTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config(['services.agent.url' => 'http://127.0.0.1:8001']);
+    }
+
     public function test_a_run_is_queued_and_agent_results_are_saved(): void
     {
         $user = User::factory()->create();
@@ -31,27 +37,28 @@ class SimulationRunTest extends TestCase
             'irrigation_source' => 'Well',
         ]);
         $plot = $this->createPlantedPlot($farm);
-        $simulation = $this->createSimulation($user, $farm, $plot);
         $plot->update(['area' => 0.75]);
-        Http::fake(fn () => Http::response([
-            'simulation_id' => $simulation->id,
-            'status' => 'completed',
-            'error' => null,
-            'summary' => null,
-            'overall_suitability_pct' => null,
-            'plots' => [
-                ['name' => 'P1', 'crop' => 'unknown-crop', 'suitability_pct' => null, 'seasonal_water_demand_m3' => null, 'comment' => null],
-            ],
-            'soil' => ['type' => null, 'moisture_pct' => null, 'health_score' => null, 'ph' => null, 'compatibility' => null],
-            'water' => ['available_m3' => null, 'required_m3' => null, 'balance_m3' => null, 'source' => null, 'monthly' => null],
-            'climate' => ['temperature_c' => null, 'rainfall_mm' => null, 'humidity_pct' => null, 'risk_level' => null, 'risk_note' => null],
-            'scenarios' => null,
-            'recommendations' => null,
-            'rotation' => null,
-            'confidence' => null,
-            'data_sources' => [],
-            'generated_at' => null,
-        ]));
+        $simulation = $this->createSimulation($user, $farm, $plot);
+        Http::fake(fn () => Http::response($this->successfulAgentResponse([
+            'sequence' => [[
+                'plot_id' => $plot->id,
+                'plot_name' => 'P1',
+                'crop' => 'wheat',
+                'area_hectares' => 0.75,
+                'seasonal_etc_mm' => 525,
+                'estimated_net_irrigation_demand_mm' => null,
+                'estimated_net_irrigation_demand_m3' => null,
+                'suitability' => ['status' => 'screening_suitable'],
+            ]],
+            'estimated_net_irrigation_demand_mm' => null,
+            'estimated_net_irrigation_demand_m3' => null,
+            'assumptions' => ['Generic ET0 assumption'],
+            'limitations' => ['Screening only'],
+            'data_sources' => ['Abu Qerdan crop catalog'],
+            'missing_information' => ['seasonal_precipitation_mm'],
+            'tools_used' => ['calculate_water_balance'],
+            'tool_results' => ['calculate_water_balance' => ['estimated_net_irrigation_demand_mm' => null]],
+        ])));
 
         $this->actingAs($user)
             ->postJson(route('farm.simulations.run', $simulation))
@@ -67,66 +74,113 @@ class SimulationRunTest extends TestCase
         $this->assertSame('saving', $simulation->stage);
         $this->assertNotNull($simulation->finished_at);
         $this->assertSame(
-            'unknown-crop',
-            $simulation->results['plots'][0]['crop']
+            'wheat',
+            $simulation->results['sequence'][0]['crop']
         );
-        $this->assertNull($simulation->results['plots'][0]['suitability_pct']);
+        $this->assertNull($simulation->results['sequence'][0]['estimated_net_irrigation_demand_mm']);
+        $this->assertSame($simulation->id, $simulation->results['simulation_id']);
+        $this->assertSame($simulation->user_id, $simulation->results['user_id']);
+        $this->assertSame('Generic ET0 assumption', $simulation->results['assumptions'][0]);
         $request = Http::recorded()->first()[0]->data();
         $this->assertSame([
-            'simulation_id' => $simulation->id,
-            'farm' => [
-                'name' => 'Giza Farm',
-                'latitude' => 29.5,
-                'longitude' => 31.2,
-                'governorate' => 'Giza',
-                'total_area_feddan' => 4 * (10000 / 4200),
-                'soil_type' => null,
-                'irrigation_source' => 'Well',
+            'summary' => [
+                'farm_id' => (string) $farm->id,
+                'farm_name' => 'Giza Farm',
+                'location' => [
+                    'latitude' => 29.5,
+                    'longitude' => 31.2,
+                    'country' => 'Egypt',
+                    'governorate' => 'Giza',
+                    'city' => 'Giza',
+                ],
+                'farm_area_hectares' => 0.75,
+                'soil' => [],
+                'current_crop' => 'wheat',
+                'crops' => [[
+                    'plot_id' => $plot->id,
+                    'name' => 'P1',
+                    'crop' => 'wheat',
+                    'area_hectares' => 0.75,
+                ]],
+                'crop_history' => [],
+                'planting_date' => '2026-01-15',
+                'analysis_period' => ['start_date' => '2026-01-15', 'end_date' => '2026-05-15'],
+                'irrigation' => ['source' => 'Well'],
+                'planning_context' => [
+                    'priority' => null,
+                    'target_season' => null,
+                    'planning_horizon' => null,
+                    'selected_season' => 'spring',
+                    'water_scenario_label' => 'typical',
+                    'climate_scenario_label' => 'baseline',
+                ],
             ],
-            'plots' => [
-                ['name' => 'P1', 'area_feddan' => 0.75 * (10000 / 4200), 'crop' => 'wheat'],
+            'strategy' => [
+                'strategy_id' => (string) $simulation->id,
+                'title' => 'Saved farm plan',
+                'duration_days' => 120,
+                'plots' => [[
+                    'plot_id' => $plot->id,
+                    'name' => 'P1',
+                    'crop' => 'wheat',
+                    'area_hectares' => 0.75,
+                ]],
             ],
-            'available_crops' => ['wheat'],
-            'config' => $simulation->settings,
+            'weather' => [],
+            'scenario' => [
+                'rainfall_change_pct' => 0.0,
+                'temperature_change_c' => 0.0,
+                'water_availability_change_pct' => 0.0,
+            ],
         ], $request);
     }
 
-    public function test_an_agent_failed_status_uses_its_error(): void
+    public function test_a_success_shaped_but_invalid_agent_response_fails_the_simulation(): void
     {
         [$user, $simulation] = $this->runningSimulation();
-        Http::fake(fn () => Http::response([
-            'simulation_id' => $simulation->id,
-            'status' => 'failed',
-            'error' => 'Agent could not calculate this scenario',
-        ]));
+        Http::fake(fn () => Http::response(['success' => true, 'data' => ['status' => 'failed']]));
 
         $this->runJob($simulation);
 
         $this->assertSame('failed', $simulation->fresh()->status);
-        $this->assertSame('Agent could not calculate this scenario', $simulation->fresh()->error);
-        $this->assertSame('failed', $simulation->fresh()->results['status']);
-        $this->assertSame('Agent could not calculate this scenario', $simulation->fresh()->results['error']);
+        $this->assertSame('Invalid agent response', $simulation->fresh()->error);
     }
 
-    public function test_known_crop_slugs_are_mapped_to_crop_names_in_agent_results(): void
+    public function test_structured_agent_results_and_metadata_are_preserved(): void
     {
         [$user, $simulation] = $this->runningSimulation();
-        Http::fake(fn () => Http::response([
-            'simulation_id' => $simulation->id,
-            'status' => 'completed',
-            'plots' => [['name' => 'P1', 'crop' => 'wheat']],
-            'soil' => ['compatibility' => [['crop' => 'wheat', 'score_pct' => 80]]],
-            'rotation' => [['plot' => 'P1', 'now' => 'wheat', 'next' => null]],
-        ]));
+        Http::fake(fn () => Http::response($this->successfulAgentResponse([
+            'sequence' => [['plot_id' => null, 'crop' => 'wheat', 'seasonal_etc_mm' => 100]],
+            'assumptions' => ['assumption'],
+            'limitations' => ['limitation'],
+            'tools_used' => ['calculate_water_balance', 'evaluate_crop_suitability'],
+            'tool_results' => ['water_balance' => ['deficit' => null]],
+            'data_sources' => ['Abu Qerdan crop catalog'],
+            'missing_information' => ['rainfall'],
+        ])));
 
         $this->runJob($simulation);
 
-        $this->assertSame('Wheat', $simulation->fresh()->results['plots'][0]['crop']);
-        $this->assertSame('Wheat', $simulation->fresh()->results['soil']['compatibility'][0]['crop']);
-        $this->assertSame('Wheat', $simulation->fresh()->results['rotation'][0]['now']);
-        $this->assertNull($simulation->fresh()->results['rotation'][0]['next']);
-        $this->assertNull($simulation->fresh()->results['summary']);
-        $this->assertNull($simulation->fresh()->results['water']);
+        $this->assertSame('wheat', $simulation->fresh()->results['sequence'][0]['crop']);
+        $this->assertSame(['assumption'], $simulation->fresh()->results['assumptions']);
+        $this->assertSame(['limitation'], $simulation->fresh()->results['limitations']);
+        $this->assertSame(['calculate_water_balance', 'evaluate_crop_suitability'], $simulation->fresh()->results['tools_used']);
+        $this->assertSame(['rainfall'], $simulation->fresh()->results['missing_information']);
+        $this->assertSame('wheat', $simulation->fresh()->results['input_parameters']['strategy']['plots'][0]['crop']);
+    }
+
+    public function test_simulation_requests_are_sent_to_the_agent_api_route(): void
+    {
+        [$user, $simulation] = $this->runningSimulation();
+        Http::fake(fn () => Http::response($this->successfulAgentResponse([
+            'sequence' => [['crop' => 'wheat']],
+        ])));
+
+        $this->runJob($simulation);
+
+        Http::assertSent(function ($request) {
+            return $request->url() === 'http://127.0.0.1:8001/api/agent/simulate';
+        });
     }
 
     public function test_an_agent_http_failure_marks_the_simulation_failed(): void
@@ -164,13 +218,10 @@ class SimulationRunTest extends TestCase
         $this->assertSame('Invalid agent response', $simulation->fresh()->error);
     }
 
-    public function test_a_mismatched_agent_simulation_id_is_invalid(): void
+    public function test_an_agent_response_missing_required_result_fields_is_invalid(): void
     {
         [$user, $simulation] = $this->runningSimulation();
-        Http::fake(fn () => Http::response([
-            'simulation_id' => $simulation->id + 1,
-            'status' => 'completed',
-        ]));
+        Http::fake(fn () => Http::response(['success' => true, 'data' => ['sequence' => []]]));
 
         $this->runJob($simulation);
 
@@ -189,6 +240,17 @@ class SimulationRunTest extends TestCase
         $this->assertSame('failed', $simulation->fresh()->status);
         $this->assertSame('Agent not connected', $simulation->fresh()->error);
         Http::assertNothingSent();
+    }
+
+    public function test_an_unavailable_agent_host_marks_the_simulation_failed(): void
+    {
+        [$user, $simulation] = $this->runningSimulation();
+        Http::fake(fn () => throw new ConnectionException('Connection refused.'));
+
+        $this->runJob($simulation);
+
+        $this->assertSame('failed', $simulation->fresh()->status);
+        $this->assertSame('Agent not connected', $simulation->fresh()->error);
     }
 
     public function test_another_users_simulation_is_forbidden_and_a_missing_simulation_is_not_found(): void
@@ -292,6 +354,22 @@ class SimulationRunTest extends TestCase
             app(AgentService::class),
             app(SimulationAgentMapper::class)
         );
+    }
+
+    private function successfulAgentResponse(array $data = []): array
+    {
+        return [
+            'success' => true,
+            'data' => array_merge([
+                'sequence' => [],
+                'assumptions' => [],
+                'limitations' => [],
+                'data_sources' => [],
+                'missing_information' => [],
+                'tools_used' => [],
+                'tool_results' => [],
+            ], $data),
+        ];
     }
 
     private function runningSimulation(): array

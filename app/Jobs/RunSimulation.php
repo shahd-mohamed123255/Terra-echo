@@ -32,7 +32,7 @@ class RunSimulation implements ShouldQueue
             return;
         }
 
-        $simulation = Simulation::query()->with('farm')->find($this->simulationId);
+        $simulation = Simulation::query()->with(['farm', 'chatConversation'])->find($this->simulationId);
         if (! $simulation || $simulation->status !== 'running') {
             return;
         }
@@ -48,10 +48,18 @@ class RunSimulation implements ShouldQueue
             ->with('crop')
             ->whereIn('id', $plotIds)
             ->get();
+        $savedPlots = collect($simulation->plots ?? [])->keyBy(fn ($plot) => (string) ($plot['id'] ?? ''));
 
         if ($plotIds->isEmpty()
             || $plots->count() !== $plotIds->count()
-            || $plots->contains(fn ($plot) => $plot->crop === null)) {
+            || $plots->contains(function ($plot) use ($savedPlots): bool {
+                $saved = $savedPlots->get((string) $plot->id);
+
+                return $plot->crop === null
+                    || ! is_array($saved)
+                    || (int) ($saved['crop_id'] ?? 0) !== (int) $plot->crop_id
+                    || (float) ($saved['area'] ?? 0) !== (float) $plot->area;
+            })) {
             $this->failIfRunning('Selected plots are no longer available with crops.');
 
             return;
