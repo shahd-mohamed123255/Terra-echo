@@ -5,6 +5,7 @@ use App\Http\Controllers\ChatController;
 use App\Http\Controllers\FarmController;
 use App\Http\Controllers\FarmWizardController;
 use App\Http\Controllers\MyFarmController;
+use App\Http\Controllers\PlanController;
 use App\Http\Controllers\SimulationController;
 use Illuminate\Support\Facades\Route;
 
@@ -40,8 +41,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/explore-farm', [FarmController::class, 'explore'])->name('farm.explore');
     Route::post('/explore-farm', [FarmController::class, 'storeLocation'])->name('farm.location.store');
-    Route::get('/plans', [FarmController::class, 'plans'])->name('plans');
-    Route::post('/plans', [FarmController::class, 'selectPlan'])->name('plans.select');
+    Route::get('/plans', [PlanController::class, 'plans'])->name('plans');
+    Route::post('/plans', [PlanController::class, 'selectPlan'])->name('plans.select');
 });
 
 Route::middleware('auth')->prefix('farm')->name('farm.')->group(function () {

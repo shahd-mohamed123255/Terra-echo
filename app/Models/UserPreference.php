@@ -9,4 +9,6 @@ class UserPreference extends Model
 {
     /** @use HasFactory<\Database\Factories\UserPreferenceFactory> */
     use HasFactory;
+
+    protected $guarded = [];
 }

@@ -39,6 +39,7 @@ return [
         'url' => env('AGENT_BASE_URL', ''),
         'token' => env('AGENT_API_TOKEN'),
         'simulation_timeout' => (int) env('AGENT_SIMULATION_TIMEOUT', 60),
+        'local_fallback' => env('AGENT_LOCAL_FALLBACK', true),
     ],
 
 ];

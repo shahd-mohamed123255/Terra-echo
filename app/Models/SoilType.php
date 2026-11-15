@@ -9,5 +9,7 @@ class SoilType extends Model
 {
     /** @use HasFactory<\Database\Factories\SoilTypeFactory> */
     use HasFactory;
+
+    protected $guarded = [];
 }
  

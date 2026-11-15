@@ -3,7 +3,8 @@
 
     <div class="links">
         <a class="{{ request()->routeIs('home') ? 'active' : '' }}" href="{{ route('home') }}">Home</a>
-        <a class="{{ request()->routeIs('farm.*') ? 'active' : '' }}" href="{{ route('farm.index') }}">My Farm</a>
+        <a class="{{ request()->routeIs('plans*') ? 'active' : '' }}" href="{{ route('plans') }}">Farming Plans</a>
+        <a class="{{ request()->routeIs('farm.*') ? 'active' : '' }}" href="{{ route('farm.index') }}">My Farm & Simulation</a>
         <a class="{{ request()->routeIs('about') ? 'active' : '' }}" href="{{ route('about') }}">About Us</a>
     </div>
 

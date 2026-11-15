@@ -9,4 +9,6 @@ class Recommendation extends Model
 {
     /** @use HasFactory<\Database\Factories\RecommendationFactory> */
     use HasFactory;
+
+    protected $guarded = [];
 }

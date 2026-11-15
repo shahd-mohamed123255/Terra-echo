@@ -47,12 +47,19 @@ class AgentService
         Collection $plots,
         SimulationAgentMapper $mapper
     ): array {
-        if ($this->baseUrl === '') {
-            throw new RuntimeException('Agent not connected');
-        }
-
         $timeout = max(1, (int) config('services.agent.simulation_timeout', 60));
         $input = $mapper->toAgentRequest($simulation, $plots);
+
+        if ($this->baseUrl === '') {
+            if (config('services.agent.local_fallback', false)) {
+                $local = $this->runLocalRunner('simulate', $input);
+                if ($local['ok']) {
+                    return $mapper->fromAgentResponse(['success' => true, 'data' => $local['data']], $simulation, $input);
+                }
+            }
+
+            throw new RuntimeException('Agent not connected');
+        }
 
         try {
             $response = Http::acceptJson()
@@ -61,6 +68,13 @@ class AgentService
                 ->timeout($timeout)
                 ->post($this->baseUrl.'/api/agent/simulate', $input);
         } catch (ConnectionException $exception) {
+            if (config('services.agent.local_fallback', false)) {
+                $local = $this->runLocalRunner('simulate', $input);
+                if ($local['ok']) {
+                    return $mapper->fromAgentResponse(['success' => true, 'data' => $local['data']], $simulation, $input);
+                }
+            }
+
             $message = strtolower($exception->getMessage());
             $reason = str_contains($message, 'timed out') || str_contains($message, 'timeout')
                 ? 'Agent request timed out'
@@ -73,6 +87,13 @@ class AgentService
 
             throw new RuntimeException($reason, previous: $exception);
         } catch (\Throwable $exception) {
+            if (config('services.agent.local_fallback', false)) {
+                $local = $this->runLocalRunner('simulate', $input);
+                if ($local['ok']) {
+                    return $mapper->fromAgentResponse(['success' => true, 'data' => $local['data']], $simulation, $input);
+                }
+            }
+
             Log::warning('Simulation agent request could not be completed', [
                 'simulation_id' => $simulation->id,
                 'reason' => $exception->getMessage(),
@@ -147,6 +168,13 @@ class AgentService
     protected function request(string $method, string $path, array $data = [], int $timeout = 30): array
     {
         if ($this->baseUrl === '') {
+            if (config('services.agent.local_fallback', false)) {
+                $fallback = $this->runLocalFallback($method, $path, $data);
+                if ($fallback !== null) {
+                    return $fallback;
+                }
+            }
+
             return [
                 'ok' => false,
                 'status' => 503,
@@ -196,6 +224,13 @@ class AgentService
         } catch (ConnectionException $e) {
             Log::error('Agent offline: '.$e->getMessage());
 
+            if (config('services.agent.local_fallback', false)) {
+                $fallback = $this->runLocalFallback($method, $path, $data);
+                if ($fallback !== null) {
+                    return $fallback;
+                }
+            }
+
             return [
                 'ok' => false,
                 'status' => 503,
@@ -204,6 +239,13 @@ class AgentService
             ];
         } catch (\Throwable $e) {
             Log::error('Agent unexpected: '.$e->getMessage());
+
+            if (config('services.agent.local_fallback', false)) {
+                $fallback = $this->runLocalFallback($method, $path, $data);
+                if ($fallback !== null) {
+                    return $fallback;
+                }
+            }
 
             return [
                 'ok' => false,
@@ -234,5 +276,96 @@ class AgentService
         $token = trim((string) config('services.agent.token'));
 
         return $token === '' ? [] : ['Authorization' => 'Bearer '.$token];
+    }
+
+    public function runLocalRunner(string $action, array $data = []): array
+    {
+        $runnerScript = base_path('../abu qerdan/runner.py');
+        if (! file_exists($runnerScript)) {
+            $runnerScript = dirname(base_path()).'/abu qerdan/runner.py';
+        }
+        if (! file_exists($runnerScript)) {
+            return [
+                'ok' => false,
+                'status' => 503,
+                'code' => 'agent_offline',
+                'message' => 'Agent runner script not found.',
+            ];
+        }
+
+        $tmpFile = tempnam(sys_get_temp_dir(), 'terra_echo_');
+        file_put_contents($tmpFile, json_encode($data, JSON_UNESCAPED_UNICODE));
+
+        $process = new \Symfony\Component\Process\Process([
+            'python',
+            $runnerScript,
+            $action,
+            '@'.$tmpFile,
+        ], dirname($runnerScript));
+
+        $process->setTimeout(60);
+        $process->run();
+
+        if (file_exists($tmpFile)) {
+            @unlink($tmpFile);
+        }
+
+        if (! $process->isSuccessful()) {
+            Log::error('Local Agent runner error', [
+                'action' => $action,
+                'error' => $process->getErrorOutput(),
+            ]);
+
+            return [
+                'ok' => false,
+                'status' => 500,
+                'code' => 'runner_error',
+                'message' => 'Agent execution failed.',
+            ];
+        }
+
+        $output = trim($process->getOutput());
+        $json = json_decode($output, true);
+
+        if (is_array($json) && ($json['success'] ?? false) === true && isset($json['data'])) {
+            return ['ok' => true, 'data' => $json['data']];
+        }
+
+        return [
+            'ok' => false,
+            'status' => 500,
+            'code' => $json['error']['code'] ?? 'invalid_agent_response',
+            'message' => $json['error']['message'] ?? 'Invalid agent response',
+        ];
+    }
+
+    protected function runLocalFallback(string $method, string $path, array $data): ?array
+    {
+        $action = match (true) {
+            $path === '/health' => 'health',
+            $path === '/api/agent/start' => 'start',
+            $path === '/api/agent/chat' => 'chat',
+            str_starts_with($path, '/api/agent/conversations/') => 'history',
+            $path === '/api/agent/plan' => 'plan',
+            $path === '/api/agent/analyze' => 'analyze',
+            $path === '/api/agent/recommend' => 'recommend',
+            $path === '/api/agent/compare' => 'compare',
+            $path === '/api/agent/predict' => 'predict',
+            $path === '/api/agent/knowledge/search' => 'knowledge',
+            default => null,
+        };
+
+        if ($action === null) {
+            return null;
+        }
+
+        if ($action === 'history') {
+            $parts = explode('/', $path);
+            $convId = urldecode(end($parts));
+            $data = ['conversation_id' => $convId];
+        }
+
+        $res = $this->runLocalRunner($action, $data);
+        return $res['ok'] ? $res : null;
     }
 }

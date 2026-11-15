@@ -179,7 +179,7 @@ class FarmWizardController extends Controller
 
 
 
-public function confirm(Request $request)
+    public function confirm(Request $request)
     {
         $farm = $this->draftFarm($request);
 
@@ -190,9 +190,7 @@ public function confirm(Request $request)
 
         $farm->update(['status' => 'active']);
 
-        // لاحقاً: هنا بنبعت المزرعة للـ Agent
-
-        return redirect()->route('farm.index');
+        return redirect()->route('plans', ['farm' => $farm->id]);
     }
 
 

@@ -40,4 +40,19 @@ class CropPlan extends Model
     {
         return $this->hasMany(Simulation::class, 'selected_plan_id');
     }
+
+    public function getArchetypeAttribute(): ?string
+    {
+        return $this->settings['plan_type'] ?? null;
+    }
+
+    public function getMetricsAttribute(): array
+    {
+        return $this->settings['metrics'] ?? [];
+    }
+
+    public function getSeasonAttribute(): ?string
+    {
+        return $this->settings['planting_season'] ?? null;
+    }
 }

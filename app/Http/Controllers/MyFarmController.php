@@ -65,6 +65,11 @@ class MyFarmController extends Controller
             ->where('status', 'completed')
             ->latest()
             ->first();
+        $selectedCropPlan = CropPlan::query()
+            ->where('farm_id', $farm->id)
+            ->where('status', 'selected')
+            ->latest()
+            ->first();
 
         return view('farm.my-farm', [
             'farms' => $farms,
@@ -75,6 +80,7 @@ class MyFarmController extends Controller
             'scenarioSettings' => $scenario?->settings ?? [],
             'latestSimulation' => $scenario,
             'latestCompletedSimulation' => $latestCompletedSimulation,
+            'selectedCropPlan' => $selectedCropPlan,
         ]);
     }
 

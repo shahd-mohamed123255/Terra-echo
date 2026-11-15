@@ -9,4 +9,6 @@ class NasaData extends Model
 {
     /** @use HasFactory<\Database\Factories\NasaDataFactory> */
     use HasFactory;
+
+    protected $guarded = [];
 }

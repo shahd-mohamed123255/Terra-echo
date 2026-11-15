@@ -71,7 +71,13 @@ class SimulationController extends Controller
         }
         $simulation->refresh();
 
-        dispatch((new RunSimulation((int) $simulation->id))->onConnection('database'));
+        $queueConnection = config('queue.default', 'database');
+        if ($queueConnection === 'sync' && ! app()->environment('testing')) {
+            RunSimulation::dispatchSync((int) $simulation->id);
+            $simulation->refresh();
+        } else {
+            dispatch((new RunSimulation((int) $simulation->id))->onConnection($queueConnection === 'sync' ? 'database' : $queueConnection));
+        }
 
         return response()->json([
             'success' => true,

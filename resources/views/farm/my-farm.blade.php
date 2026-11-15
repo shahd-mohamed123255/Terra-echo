@@ -95,8 +95,43 @@
         <div><small>Total Area</small>{{ $farm->area !== null ? ($farm->area + 0) . ' ' . $farm->area_unit : 'Awaiting data' }}</div>
         <div><small>Agricultural Plots</small>{{ $plots->count() }}</div>
         <div><small>Soil</small>{{ $farm->soilType?->name ?? 'Awaiting data' }}</div>
+        <div><small>Farming Plan</small>{{ $selectedCropPlan ? $selectedCropPlan->name : 'None selected' }}</div>
         <div><small>Last Update</small>{{ $farm->updated_at->format('d M Y · H:i') }}</div>
     </div>
+
+    @if ($selectedCropPlan)
+        <div class="active-plan-banner" style="margin: 1.25rem 0; padding: 1rem 1.5rem; background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.25); border-radius: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <span style="font-size: 1.75rem;">🌾</span>
+                <div>
+                    <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #16a34a; font-weight: 700;">Active Farming Plan</div>
+                    <strong style="font-size: 1.1rem; color: #1f2937;">{{ $selectedCropPlan->name }}</strong>
+                    <span style="margin-left: 0.5rem; font-size: 0.85rem; color: #4b5563;">
+                        ({{ ucfirst($selectedCropPlan->season ?? 'season') }}
+                        @if(data_get($selectedCropPlan->metrics, 'suitability_score')) · Suitability: <strong>{{ data_get($selectedCropPlan->metrics, 'suitability_score') }}/100</strong>@endif
+                        @if(data_get($selectedCropPlan->metrics, 'water_demand_m3')) · Water Demand: <strong>{{ number_format(data_get($selectedCropPlan->metrics, 'water_demand_m3')) }} m³</strong>@endif
+                        @if(data_get($selectedCropPlan->metrics, 'total_yield_tons')) · Est. Yield: <strong>{{ data_get($selectedCropPlan->metrics, 'total_yield_tons') }} tons</strong>@endif)
+                    </span>
+                </div>
+            </div>
+            <a href="{{ route('plans', ['farm' => $farm->id]) }}" style="padding: 0.5rem 1rem; background: #fff; border: 1px solid #16a34a; color: #16a34a; border-radius: 8px; font-weight: 600; font-size: 0.875rem; text-decoration: none;">
+                Change Plan ➔
+            </a>
+        </div>
+    @else
+        <div class="active-plan-banner" style="margin: 1.25rem 0; padding: 1rem 1.5rem; background: rgba(234, 179, 8, 0.08); border: 1px solid rgba(234, 179, 8, 0.3); border-radius: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <span style="font-size: 1.75rem;">📋</span>
+                <div>
+                    <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #ca8a04; font-weight: 700;">No Plan Selected</div>
+                    <span style="font-size: 0.95rem; color: #4b5563;">Generate AI-optimized cropping plans based on your soil, climate, and water budget.</span>
+                </div>
+            </div>
+            <a href="{{ route('plans', ['farm' => $farm->id]) }}" style="padding: 0.5rem 1rem; background: #ca8a04; color: #fff; border-radius: 8px; font-weight: 600; font-size: 0.875rem; text-decoration: none;">
+                Select Farming Plan ➔
+            </a>
+        </div>
+    @endif
 
     <div class="myfarm-layout">
         <section class="myfarm-primary" aria-labelledby="farm-map-title">
