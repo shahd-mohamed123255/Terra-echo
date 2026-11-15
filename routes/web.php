@@ -26,7 +26,11 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-Route::get('/my-farm', [MyFarmController::class, 'index'])->name('farm.index');
+    Route::get('/my-farm', [MyFarmController::class, 'index'])->name('farm.index');
+    Route::post('/my-farm/plots/{fieldId}/crop', [MyFarmController::class, 'assignCrop'])
+        ->name('farm.plots.crop.assign');
+    Route::delete('/my-farm/plots/{fieldId}/crop', [MyFarmController::class, 'removeCrop'])
+        ->name('farm.plots.crop.remove');
 
     Route::get('/explore-farm', [FarmController::class, 'explore'])->name('farm.explore');
     Route::post('/explore-farm', [FarmController::class, 'storeLocation'])->name('farm.location.store');

@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Crop;
+use App\Models\Field;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class MyFarmController extends Controller
 {
@@ -53,9 +55,69 @@ class MyFarmController extends Controller
 
         return view('farm.my-farm', [
             'farms' => $farms,
-            'farm'  => $farm,
+            'farm' => $farm,
             'crops' => Crop::orderBy('id')->get(),
             'plots' => $plots,
         ]);
+    }
+
+    public function assignCrop(Request $request, int $fieldId)
+    {
+        $field = Field::with(['farm', 'crop'])->findOrFail($fieldId);
+
+        abort_unless($field->farm->user_id === auth()->id(), 403, 'You do not own this plot.');
+        abort_unless($field->farm->status === 'active', 404, 'Plot not found.');
+
+        $validator = Validator::make($request->all(), [
+            'crop_id' => ['required', 'integer', 'exists:crops,id'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The selected crop is invalid.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $field->update([
+            'crop_id' => $validator->validated()['crop_id'],
+            'status' => 'planted',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'plot' => $this->plotPayload($field->load('crop')),
+        ]);
+    }
+
+    public function removeCrop(int $fieldId)
+    {
+        $field = Field::with(['farm', 'crop'])->findOrFail($fieldId);
+
+        abort_unless($field->farm->user_id === auth()->id(), 403, 'You do not own this plot.');
+        abort_unless($field->farm->status === 'active', 404, 'Plot not found.');
+
+        $field->update([
+            'crop_id' => null,
+            'status' => 'fallow',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'plot' => $this->plotPayload($field->load('crop')),
+        ]);
+    }
+
+    private function plotPayload(Field $field): array
+    {
+        return [
+            'id' => $field->id,
+            'name' => $field->name,
+            'status' => $field->status,
+            'crop' => $field->crop
+                ? ['id' => $field->crop->id, 'name' => $field->crop->name]
+                : null,
+        ];
     }
 }

@@ -8,6 +8,94 @@
 
 .myfarm-primary {
     min-width: 0;
+    color: #fff;
+}
+
+.myfarm-primary h2 {
+    margin: 0 0 8px;
+    font-size: 1.35rem;
+}
+
+.plot-selection-hint {
+    margin: 0 0 16px;
+    color: #9fb3c8;
+    font-size: 0.9rem;
+}
+
+.plot-request-message {
+    margin: 0 0 16px;
+    color: #ffb3c1;
+    font-size: 0.9rem;
+}
+
+.plot-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.plot-card {
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    transition: border-color 0.2s, background-color 0.2s, transform 0.2s;
+}
+
+.plot-card.is-selectable {
+    border-color: #5fb3ff;
+    background: rgba(95, 179, 255, 0.12);
+}
+
+.plot-card.is-selectable:hover {
+    transform: translateY(-2px);
+}
+
+.plot-card-select {
+    display: grid;
+    gap: 8px;
+    width: 100%;
+    padding: 0;
+    color: inherit;
+    text-align: left;
+    background: none;
+    border: 0;
+    font: inherit;
+}
+
+.plot-card-select:disabled {
+    cursor: default;
+}
+
+.plot-card.is-selectable .plot-card-select {
+    cursor: pointer;
+}
+
+.plot-card-name {
+    color: #9fb3c8;
+    font-size: 0.8rem;
+}
+
+.plot-card-crop {
+    min-height: 1.5em;
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+.plot-card-remove {
+    margin-top: 12px;
+    padding: 6px 10px;
+    color: #ffb3c1;
+    background: rgba(255, 179, 193, 0.08);
+    border: 1px solid rgba(255, 179, 193, 0.2);
+    border-radius: 8px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.8rem;
+}
+
+.plot-card-remove[hidden] {
+    display: none;
 }
 
 .crop-library {
@@ -159,14 +247,19 @@
     width: 100%;
     margin-top: 14px;
     padding: 9px 12px;
-    color: #9ba9b8;
-    background: rgba(255, 255, 255, 0.07);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #102033;
+    background: #5fb3ff;
+    border: 1px solid #5fb3ff;
     border-radius: 9px;
     font: inherit;
     font-size: 0.82rem;
-    cursor: not-allowed;
-    opacity: 0.7;
+    cursor: pointer;
+}
+
+.crop-card-add.is-selected {
+    color: #fff;
+    background: #2679b7;
+    border-color: #5fb3ff;
 }
 
 .crop-library-empty {
@@ -190,6 +283,10 @@
 
     .myfarm-primary:empty {
         display: none;
+    }
+
+    .plot-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .crop-library-list {

@@ -43,7 +43,29 @@
     </div>
 
     <div class="myfarm-layout">
-        <div class="myfarm-primary"></div>
+        <section class="myfarm-primary" aria-labelledby="plots-title">
+            <h2 id="plots-title">Your Plots</h2>
+            <p class="plot-selection-hint" id="plot-selection-hint">Choose a crop from the library, then select a plot.</p>
+            <p class="plot-request-message" id="plot-request-message" role="status" aria-live="polite" hidden></p>
+
+            <div class="plot-grid">
+                @foreach ($plots as $plot)
+                    <article
+                        class="plot-card"
+                        data-assign-url="{{ route('farm.plots.crop.assign', ['fieldId' => $plot->id]) }}"
+                        data-remove-url="{{ route('farm.plots.crop.remove', ['fieldId' => $plot->id]) }}"
+                    >
+                        <button class="plot-card-select" type="button" disabled>
+                            <span class="plot-card-name">{{ $plot->name }}</span>
+                            <span class="plot-card-crop" data-plot-crop>{{ $plot->crop?->name ?? 'Empty' }}</span>
+                        </button>
+                        <button class="plot-card-remove" type="button" @if (! $plot->crop) hidden @endif>
+                            Remove crop
+                        </button>
+                    </article>
+                @endforeach
+            </div>
+        </section>
 
         <aside class="crop-library" aria-labelledby="crop-library-title">
             <div class="crop-library-heading">
@@ -114,7 +136,13 @@
                                 </div>
                             </dl>
 
-                            <button class="crop-card-add" type="button" disabled>Add to Simulation</button>
+                            <button
+                                class="crop-card-add"
+                                type="button"
+                                data-crop-id="{{ $crop->id }}"
+                                data-crop-name="{{ $crop->name }}"
+                                aria-pressed="false"
+                            >Select for plot</button>
                         </div>
                     </article>
                 @endforeach
