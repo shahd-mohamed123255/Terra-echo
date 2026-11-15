@@ -8,13 +8,22 @@ use Illuminate\Support\Facades\DB;
 
 class FarmController extends Controller
 {
-    private const PLANS = ['Starter', 'Professional', 'Enterprise'];
+    private const PLANS = ['water-saving', 'balanced', 'high-yield'];
 
     private function draftFarm(Request $request)
     {
         return $request->user()
             ->farms()
             ->where('status', 'draft')
+            ->latest()
+            ->first();
+    }
+
+    private function activeFarm(Request $request)
+    {
+        return $request->user()
+            ->farms()
+            ->where('status', 'active')
             ->latest()
             ->first();
     }
@@ -83,6 +92,12 @@ class FarmController extends Controller
     public function plans(Request $request)
     {
         if (! $this->draftFarm($request)) {
+            $farm = $this->activeFarm($request);
+
+            if ($farm) {
+                return redirect()->route('farm.index', ['farm' => $farm->id]);
+            }
+
             return redirect()->route('farm.explore')
                 ->withErrors(['location' => 'Please save your farm location first.']);
         }
@@ -99,6 +114,12 @@ class FarmController extends Controller
         $farm = $this->draftFarm($request);
 
         if (! $farm) {
+            $activeFarm = $this->activeFarm($request);
+
+            if ($activeFarm) {
+                return redirect()->route('farm.index', ['farm' => $activeFarm->id]);
+            }
+
             return redirect()->route('farm.explore')
                 ->withErrors(['location' => 'Please save your farm location first.']);
         }
@@ -106,7 +127,7 @@ class FarmController extends Controller
         $user = $request->user();
 
         DB::transaction(function () use ($user, $farm, $data) {
-            $user->update(['plan' => strtolower($data['plan'])]);
+            $user->update(['plan' => $data['plan']]);
             $farm->update(['status' => 'active']);
         });
 

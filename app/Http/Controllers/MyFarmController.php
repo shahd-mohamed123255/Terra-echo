@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Crop;
 use App\Models\Field;
+use App\Models\Simulation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -52,12 +53,27 @@ class MyFarmController extends Controller
 
         $farm->load(['soilType', 'soilReport', 'crops']);
         $plots = $farm->fields()->with('crop')->orderBy('name')->get();
+        $scenario = Simulation::query()
+            ->where('user_id', $request->user()->id)
+            ->where('farm_id', $farm->id)
+            ->latest()
+            ->first();
+        $latestCompletedSimulation = Simulation::query()
+            ->where('user_id', $request->user()->id)
+            ->where('farm_id', $farm->id)
+            ->where('status', 'completed')
+            ->latest()
+            ->first();
 
         return view('farm.my-farm', [
             'farms' => $farms,
             'farm' => $farm,
             'crops' => Crop::orderBy('id')->get(),
             'plots' => $plots,
+            'simulationOptions' => config('simulation'),
+            'scenarioSettings' => $scenario?->settings ?? [],
+            'latestSimulation' => $scenario,
+            'latestCompletedSimulation' => $latestCompletedSimulation,
         ]);
     }
 

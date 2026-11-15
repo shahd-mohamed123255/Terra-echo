@@ -1,14 +1,12 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\FarmController;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\FarmWizardController;
 use App\Http\Controllers\MyFarmController;
-use App\Http\Controllers\ChatController;
-
-
-
+use App\Http\Controllers\SimulationController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => view('home'))->name('home');
 Route::view('/about', 'about')->name('about');
@@ -31,6 +29,14 @@ Route::middleware('auth')->group(function () {
         ->name('farm.plots.crop.assign');
     Route::delete('/my-farm/plots/{fieldId}/crop', [MyFarmController::class, 'removeCrop'])
         ->name('farm.plots.crop.remove');
+    Route::post('/my-farm/farms/{farm}/simulations', [SimulationController::class, 'store'])
+        ->name('farm.simulations.store');
+    Route::post('/my-farm/simulations/{simulation}/run', [SimulationController::class, 'run'])
+        ->name('farm.simulations.run');
+    Route::get('/my-farm/simulations/{simulation}', [SimulationController::class, 'show'])
+        ->name('farm.simulations.show');
+    Route::post('/my-farm/simulations/{simulation}/cancel', [SimulationController::class, 'cancel'])
+        ->name('farm.simulations.cancel');
 
     Route::get('/explore-farm', [FarmController::class, 'explore'])->name('farm.explore');
     Route::post('/explore-farm', [FarmController::class, 'storeLocation'])->name('farm.location.store');
@@ -38,15 +44,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/plans', [FarmController::class, 'selectPlan'])->name('plans.select');
 });
 
-
-
-
 Route::middleware('auth')->prefix('farm')->name('farm.')->group(function () {
-    Route::get('details',  [FarmWizardController::class, 'details'])->name('details');
+    Route::get('details', [FarmWizardController::class, 'details'])->name('details');
     Route::post('details', [FarmWizardController::class, 'saveDetails'])->name('details.save');
-    Route::get('water',    [FarmWizardController::class, 'water'])->name('water');
-    Route::post('water',   [FarmWizardController::class, 'saveWater'])->name('water.save');
-    Route::get('summary',  [FarmWizardController::class, 'summary'])->name('summary');
+    Route::get('water', [FarmWizardController::class, 'water'])->name('water');
+    Route::post('water', [FarmWizardController::class, 'saveWater'])->name('water.save');
+    Route::get('summary', [FarmWizardController::class, 'summary'])->name('summary');
     Route::post('summary', [FarmWizardController::class, 'confirm'])->name('confirm');
 });
 

@@ -89,6 +89,64 @@
     font-size: 1.45rem;
 }
 
+.farm-map-coordinates {
+    margin: 0 0 12px;
+    color: #9fb3c8;
+    font-size: 0.82rem;
+}
+
+.farm-boundary-toggle {
+    margin-top: 12px;
+    padding: 8px 12px;
+    color: #e6eef7;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 8px;
+    font: inherit;
+    cursor: pointer;
+}
+
+.plot-details-card {
+    margin-top: 14px;
+    padding: 14px;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+}
+
+.plot-details-card[hidden] {
+    display: none;
+}
+
+.plot-details-card h3 {
+    margin: 0 0 10px;
+    font-size: 1rem;
+}
+
+.plot-details-card dl {
+    display: grid;
+    gap: 8px;
+    margin: 0 0 12px;
+}
+
+.plot-details-card dl > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 0.82rem;
+}
+
+.plot-details-card dt {
+    color: #9fb3c8;
+}
+
+.plot-details-card dd {
+    margin: 0;
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
 .farm-map {
     width: 100%;
     height: 480px;
@@ -264,6 +322,354 @@
     overflow-wrap: anywhere;
 }
 
+.scenario-card {
+    margin-top: 18px;
+    padding: 22px;
+    color: #fff;
+    background: rgba(13, 27, 46, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 18px;
+}
+
+.scenario-card > h2 {
+    margin: 0;
+    font-size: 1.35rem;
+}
+
+.scenario-description {
+    margin: 8px 0 18px;
+    color: #9fb3c8;
+}
+
+.scenario-readiness {
+    margin: 0 0 14px;
+    color: #c5d3e2;
+    font-size: 0.85rem;
+}
+
+.scenario-readonly {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.scenario-readonly > div {
+    min-width: 0;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 12px;
+}
+
+.scenario-readonly h3 {
+    margin: 0 0 10px;
+    font-size: 0.9rem;
+}
+
+.scenario-readonly p,
+.scenario-readonly ul {
+    margin: 0;
+    color: #c5d3e2;
+    font-size: 0.85rem;
+}
+
+.scenario-readonly ul {
+    display: grid;
+    gap: 6px;
+    padding-left: 18px;
+}
+
+.scenario-readonly dl {
+    display: grid;
+    gap: 7px;
+    margin: 0;
+    font-size: 0.8rem;
+}
+
+.scenario-readonly dl > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.scenario-readonly dt {
+    color: #9fb3c8;
+}
+
+.scenario-readonly dd {
+    margin: 0;
+    text-align: right;
+}
+
+.scenario-form {
+    margin-top: 18px;
+}
+
+.scenario-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.scenario-fields label {
+    display: grid;
+    gap: 7px;
+    color: #c5d3e2;
+    font-size: 0.85rem;
+}
+
+.scenario-fields input,
+.scenario-fields select {
+    width: 100%;
+    min-height: 42px;
+    padding: 9px 11px;
+    color: #fff;
+    background: #11233b;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 8px;
+    font: inherit;
+}
+
+.scenario-fields option {
+    color: #111;
+}
+
+.scenario-duration {
+    display: grid;
+    gap: 6px;
+}
+
+.scenario-duration > span {
+    color: #9fb3c8;
+    font-size: 0.78rem;
+}
+
+.scenario-duration strong {
+    color: #e6eef7;
+    font-weight: 600;
+}
+
+.scenario-field-error {
+    min-height: 1em;
+    color: #ffb3c1;
+    font-size: 0.78rem;
+}
+
+.scenario-message {
+    padding: 10px 12px;
+    color: #c5d3e2;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+}
+
+.scenario-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.scenario-actions button {
+    padding: 10px 14px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.scenario-reset {
+    color: #e6eef7;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.scenario-save {
+    color: #102033;
+    background: #f5c542;
+}
+
+.scenario-run:disabled {
+    color: #9fb3c8;
+    background: rgba(255, 255, 255, 0.05);
+    cursor: not-allowed;
+}
+
+.simulation-insights {
+    margin-top: 20px;
+    padding: 22px;
+    color: #fff;
+    background: rgba(13, 27, 46, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 18px;
+}
+
+.simulation-insights > h2 {
+    margin: 0 0 16px;
+    font-size: 1.35rem;
+}
+
+.insights-empty {
+    margin: 0;
+    color: #9fb3c8;
+}
+
+.insights-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.insight-card {
+    min-width: 0;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 12px;
+}
+
+.insight-card h3 {
+    margin: 0 0 10px;
+    font-size: 0.9rem;
+}
+
+.insight-value {
+    margin: 0;
+    color: #c5d3e2;
+    font-size: 0.85rem;
+    overflow-wrap: anywhere;
+}
+
+.insight-data-list {
+    display: grid;
+    gap: 7px;
+    margin: 0;
+}
+
+.insight-data-list > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 0.8rem;
+}
+
+.insight-data-list dt {
+    color: #9fb3c8;
+    text-transform: capitalize;
+}
+
+.insight-data-list dd {
+    margin: 0;
+    color: #e6eef7;
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
+.water-demand-chart {
+    display: block;
+    width: 100%;
+    min-height: 120px;
+    overflow: visible;
+}
+
+.water-demand-chart text {
+    fill: #c5d3e2;
+    font-size: 9px;
+}
+
+.water-demand-bar {
+    fill: #56b5ce;
+}
+
+.simulation-overlay[hidden],
+.simulation-insights [hidden] {
+    display: none;
+}
+
+.simulation-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(3, 10, 18, 0.78);
+}
+
+.simulation-overlay-card {
+    width: min(620px, 100%);
+    padding: 24px;
+    color: #fff;
+    background: #0d1b2e;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 16px;
+    box-shadow: 0 20px 70px rgba(0, 0, 0, 0.45);
+}
+
+.simulation-overlay-card h2 {
+    margin: 0 0 8px;
+}
+
+.simulation-overlay-card > p {
+    color: #c5d3e2;
+    overflow-wrap: anywhere;
+}
+
+.simulation-stages {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    margin: 20px 0;
+    padding: 0;
+    list-style-position: inside;
+}
+
+.simulation-stages li {
+    padding: 10px 8px;
+    color: #9fb3c8;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    font-size: 0.82rem;
+    text-align: center;
+}
+
+.simulation-stages li.is-current {
+    color: #102033;
+    background: #f5c542;
+    border-color: #f5c542;
+    font-weight: 700;
+}
+
+.simulation-overlay-error {
+    padding: 10px 12px;
+    color: #ffb3c1 !important;
+    background: rgba(255, 179, 193, 0.08);
+    border: 1px solid rgba(255, 179, 193, 0.2);
+    border-radius: 8px;
+}
+
+.simulation-overlay-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.simulation-overlay-actions button {
+    padding: 9px 14px;
+    color: #102033;
+    background: #f5c542;
+    border: 0;
+    border-radius: 8px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.simulation-overlay-actions button:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
 .selected-crops {
     margin: 16px 0;
     padding: 14px;
@@ -277,6 +683,15 @@
 .selected-crops-list {
     display: grid;
     gap: 8px;
+}
+
+.selected-crops-total {
+    margin: 12px 0 0;
+    padding-top: 10px;
+    color: #c5d3e2;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.82rem;
+    font-weight: 600;
 }
 
 .selected-crop-item {
@@ -342,5 +757,17 @@
 @media (max-width: 800px) {
     .farm-data-cards {
         grid-template-columns: 1fr;
+    }
+    .scenario-readonly {
+        grid-template-columns: 1fr;
+    }
+    .insights-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .simulation-stages {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }

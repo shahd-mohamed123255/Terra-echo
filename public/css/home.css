@@ -101,9 +101,20 @@ body::after {
 }
 
 .logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-size: 22px;
     font-weight: 600;
     white-space: nowrap;
+}
+
+.logo img {
+    display: block;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 auto;
+    object-fit: contain;
 }
 
 .links {
@@ -264,6 +275,7 @@ a:focus-visible {
 
     .logo {
         width: 100%;
+        justify-content: center;
         text-align: center;
     }
 

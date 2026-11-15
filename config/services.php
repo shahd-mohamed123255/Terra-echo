@@ -28,7 +28,7 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
-        'slack' => [
+    'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
@@ -37,6 +37,7 @@ return [
 
     'agent' => [
         'url' => env('AGENT_API_URL', 'http://127.0.0.1:8001'),
+        'simulation_timeout' => (int) env('AGENT_SIMULATION_TIMEOUT', 60),
     ],
 
 ];

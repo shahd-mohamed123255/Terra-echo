@@ -31,7 +31,7 @@
     <div class="wizard">
 
         <aside class="sidebar">
-            <a href="{{ route('home') }}" class="sidebar-logo">Terra Echo</a>
+            <a href="{{ route('home') }}" class="sidebar-logo"><img src="{{ asset('images/logo.png') }}" alt="" width="32" height="32">Terra Echo</a>
 
             <div class="user-badge">Hi, {{ auth()->user()->name }}</div>
 

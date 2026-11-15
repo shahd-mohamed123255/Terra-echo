@@ -1,5 +1,5 @@
 <nav class="nav">
-    <span class="logo">Terra Echo</span>
+    <span class="logo"><img src="{{ asset('images/logo.png') }}" alt="" width="36" height="36">Terra Echo</span>
 
     <div class="links">
         <a class="{{ request()->routeIs('home') ? 'active' : '' }}" href="{{ route('home') }}">Home</a>

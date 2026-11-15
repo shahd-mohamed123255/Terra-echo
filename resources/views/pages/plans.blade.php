@@ -5,58 +5,82 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Plans | Terra Echo</title>
 
-    <link rel="stylesheet" href="{{ asset('css/explore.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/sidebar.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/details.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/responsive.css') }}?v={{ filemtime(public_path('css/responsive.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/home.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/plans.css') }}">
 </head>
 <body>
+    <div class="bg" aria-hidden="true"></div>
+    @include('partials.navbar')
 
-    <div class="bg"></div>
-    <div class="bg-overlay"></div>
+    <main class="plans-page">
+        <section class="plans-page__intro" aria-labelledby="plans-heading">
+            <p class="plans-page__eyebrow">From space to soil</p>
+            <h1 class="plans-page__title" id="plans-heading">Choose a Farming Plan for Your Field</h1>
+            <p class="plans-page__subtitle">A practical plan to help farmers manage their crops and monitor field conditions</p>
+        </section>
 
-    <div class="wizard">
-        <aside class="sidebar">
-            <a href="{{ route('home') }}" class="sidebar-logo">Terra Echo</a>
+        @if ($errors->any())
+            <p class="plans-page__error" role="alert">{{ $errors->first() }}</p>
+        @endif
 
-            <div class="user-badge">Hi, {{ auth()->user()->name }}</div>
-
-            <ol class="steps">
-                <li><a href="{{ route('farm.explore') }}"><span>1</span> Location</a></li>
-                <li><a href="{{ route('farm.details') }}"><span>2</span> Details</a></li>
-                <li><a href="{{ route('farm.water') }}"><span>3</span> Water and Crops</a></li>
-                <li><a href="{{ route('farm.summary') }}"><span>4</span> Summary</a></li>
-                <li class="active"><span>5</span> Plans</li>
-            </ol>
-        </aside>
-
-        <main class="content">
-            <span class="step-pill">Step 5</span>
-            <h1>Choose a plan</h1>
-            <p class="hint">Select a plan to continue to My Farm.</p>
-
-            @if ($errors->any())
-                <p class="alert error">{{ $errors->first() }}</p>
-            @endif
-
-            <div class="d-row">
+        <section class="plans-page__selection" aria-labelledby="plans-selection-heading">
+            <h2 class="plans-page__section-label" id="plans-selection-heading">Select your plan</h2>
+            <div class="plans-page__cards" id="plans-cards">
                 @foreach ($plans as $plan)
-                    <div class="d-block">
-                        <h2>{{ $plan }}</h2>
+                    <article class="plans-page__card plans-page__card--{{ $plan }}{{ $plan === 'balanced' ? ' plans-page__card--popular' : '' }}">
+                        <div class="plans-page__card-heading">
+                            <h3 class="plans-page__card-title">{{ $plan === 'water-saving' ? 'Water-Saving' : ($plan === 'balanced' ? 'Balanced' : 'High-Yield') }}</h3>
+                            @if ($plan === 'balanced')
+                                <span class="plans-page__badge">(Recommended)</span>
+                            @endif
+                        </div>
+                        @if ($plan === 'balanced')
+                            <p class="plans-page__card-note" aria-hidden="true"></p>
+                        @endif
+                        {{-- designer's feature texts will replace these placeholders --}}
+                        <ul class="plans-page__features">
+                            @foreach (range(1, 5) as $feature)
+                                <li><span>Awaiting analysis</span></li>
+                            @endforeach
+                        </ul>
                         <form method="POST" action="{{ route('plans.select') }}">
                             @csrf
                             <input type="hidden" name="plan" value="{{ $plan }}">
-                            <button type="submit" class="btn btn-primary">Get it</button>
+                            <button type="submit" class="plans-page__button">Select this plan</button>
                         </form>
-                    </div>
+                    </article>
                 @endforeach
             </div>
+        </section>
 
-            <div class="actions">
-                <a href="{{ route('farm.summary') }}" class="btn btn-light">Back to Summary</a>
+        <section class="plans-page__comparison" aria-labelledby="plans-comparison-heading">
+            <h2 class="plans-page__section-title" id="plans-comparison-heading">Compare plans</h2>
+            <div class="plans-page__table-scroll" tabindex="0" aria-label="Plan comparison table, scroll horizontally to see all columns">
+                <table class="plans-page__table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Feature</th>
+                            <th scope="col">Water-Saving</th>
+                            <th scope="col">Balanced</th>
+                            <th scope="col">High-Yield</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><th scope="row">Water usage</th><td>Awaiting analysis</td><td>Awaiting analysis</td><td>Awaiting analysis</td></tr>
+                        <tr><th scope="row">Expected yield</th><td>Awaiting analysis</td><td>Awaiting analysis</td><td>Awaiting analysis</td></tr>
+                        <tr><th scope="row">Risk level</th><td>Awaiting analysis</td><td>Awaiting analysis</td><td>Awaiting analysis</td></tr>
+                        <tr><th scope="row">Suggested crops</th><td>Awaiting analysis</td><td>Awaiting analysis</td><td>Awaiting analysis</td></tr>
+                    </tbody>
+                </table>
             </div>
-        </main>
-    </div>
+        </section>
 
+        <section class="plans-page__cta" aria-labelledby="plans-cta-heading">
+            <div class="plans-page__cta-content">
+                <h2 class="plans-page__section-title" id="plans-cta-heading">Ready to Transform Your Farm?</h2>
+                <a class="plans-page__button" href="#plans-cards">Continue</a>
+            </div>
+        </section>
+    </main>
 </body>
 </html>

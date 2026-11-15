@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Crop;
 use App\Models\Farm;
 use App\Models\Field;
+use App\Models\Simulation;
 use App\Models\SoilType;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -108,6 +109,14 @@ class MyFarmCropAssignmentTest extends TestCase
         $response
             ->assertOk()
             ->assertSee('Your farm, from above')
+            ->assertSee('29.9876543, 31.1234567')
+            ->assertSee('Agricultural Plots')
+            ->assertSee('id="farm-boundary-toggle"', false)
+            ->assertSee('id="plot-details-card"', false)
+            ->assertSee('id="selected-crops-total"', false)
+            ->assertSee('Scenario name (optional)')
+            ->assertSee('id="scenario-readiness"', false)
+            ->assertSee('id="scenario-end-date"', false)
             ->assertSee('id="farm-map"', false)
             ->assertSee('Satellite View')
             ->assertSee('Approximate plot layout, not a surveyed boundary')
@@ -172,6 +181,48 @@ class MyFarmCropAssignmentTest extends TestCase
             ->assertSee('Climate observations')
             ->assertSee('Farm agent ID')
             ->assertSee('Awaiting data');
+    }
+
+    public function test_completed_plot_insights_are_available_to_the_plot_details_card(): void
+    {
+        $user = User::factory()->create();
+        $farm = $this->createFarm($user);
+        $farm->update(['area' => 4, 'latitude' => 29.5, 'longitude' => 31.2]);
+        $crop = Crop::create(['name' => 'Wheat', 'slug' => 'wheat']);
+        $plot = Field::create([
+            'farm_id' => $farm->id,
+            'crop_id' => $crop->id,
+            'name' => 'P1',
+            'area' => 1,
+            'status' => 'planted',
+        ]);
+        Simulation::create([
+            'user_id' => $user->id,
+            'farm_id' => $farm->id,
+            'status' => 'completed',
+            'settings' => [],
+            'plots' => [],
+            'results' => [
+                'plots' => [[
+                    'name' => $plot->name,
+                    'suitability_pct' => null,
+                    'seasonal_water_demand_m3' => 42,
+                    'comment' => null,
+                ]],
+            ],
+        ]);
+        Simulation::create([
+            'user_id' => $user->id,
+            'farm_id' => $farm->id,
+            'status' => 'pending',
+            'settings' => [],
+            'plots' => [],
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('farm.index'))
+            ->assertOk()
+            ->assertSee('"simulationPlots":[{"name":"P1","suitability_pct":null,"seasonal_water_demand_m3":42,"comment":null}]', false);
     }
 
     private function createFarm(User $user, string $status = 'active'): Farm

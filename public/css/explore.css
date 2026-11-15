@@ -41,10 +41,21 @@ body {
 }
 
 .sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     color: #fff;
     font-size: 1.3rem;
     font-weight: 700;
     text-decoration: none;
+}
+
+.sidebar-logo img {
+    display: block;
+    width: 32px;
+    height: 32px;
+    flex: 0 0 auto;
+    object-fit: contain;
 }
 
 .user-badge {

@@ -17,6 +17,9 @@
             'longitude' => $farm->longitude,
             'area' => $farm->area,
             'areaUnit' => $farm->area_unit,
+            'simulationPlots' => $latestCompletedSimulation
+                ? data_get($latestCompletedSimulation->results, 'plots', [])
+                : [],
             'plots' => $plots->map(fn ($plot) => [
                 'id' => $plot->id,
                 'name' => $plot->name,
@@ -27,9 +30,37 @@
                 'removeUrl' => route('farm.plots.crop.remove', ['fieldId' => $plot->id]),
             ])->values(),
         ];
+        $myFarmSimulationData = $latestSimulation ? [
+            'id' => $latestSimulation->id,
+            'status' => $latestSimulation->status,
+            'stage' => $latestSimulation->stage,
+            'error' => $latestSimulation->error,
+            'plots' => $latestSimulation->plots,
+            'results' => $latestSimulation->results,
+            'started_at' => $latestSimulation->started_at,
+            'finished_at' => $latestSimulation->finished_at,
+        ] : null;
     @endphp
     <script>
         window.myFarmMapData = @json($myFarmMapData);
+        window.myFarmScenarioData = {
+            saveUrl: @json(route('farm.simulations.store', ['farm' => $farm->id])),
+            runUrl: @json(route('farm.simulations.run', ['simulation' => '__simulation__'])),
+            showUrl: @json(route('farm.simulations.show', ['simulation' => '__simulation__'])),
+            cancelUrl: @json(route('farm.simulations.cancel', ['simulation' => '__simulation__'])),
+            farmName: @json($farm->city . ' Farm'),
+            settings: @json($scenarioSettings),
+            simulation: @json($myFarmSimulationData),
+        };
+        window.myFarmSoilValues = {
+            soilType: @json($farm->soilType?->name),
+            ph: @json($farm->soilReport?->ph),
+            salinity: @json($farm->soilReport?->salinity),
+            nitrogen: @json($farm->soilReport?->nitrogen),
+            phosphorus: @json($farm->soilReport?->phosphorus),
+            potassium: @json($farm->soilReport?->potassium),
+            irrigationSource: @json($farm->irrigation_source),
+        };
     </script>
     <script src="{{ asset('js/crop-library.js') }}"></script>
 @endpush
@@ -59,15 +90,22 @@
     <div class="farm-strip">
         <div><small>Farm Name</small>{{ $farm->city }} Farm</div>
         <div><small>Location</small>{{ collect([$farm->city, $farm->governorate, $farm->country])->filter()->implode(', ') }}</div>
-        <div><small>Total Area</small>{{ $farm->area + 0 }} {{ $farm->area_unit }}</div>
+        <div><small>Total Area</small>{{ $farm->area !== null ? ($farm->area + 0) . ' ' . $farm->area_unit : 'Awaiting data' }}</div>
+        <div><small>Agricultural Plots</small>{{ $plots->count() }}</div>
         <div><small>Soil</small>{{ $farm->soilType?->name ?? 'Awaiting data' }}</div>
         <div><small>Last Update</small>{{ $farm->updated_at->format('d M Y · H:i') }}</div>
     </div>
 
     <div class="myfarm-layout">
         <section class="myfarm-primary" aria-labelledby="farm-map-title">
+            @php($insights = $latestCompletedSimulation?->results ?? [])
             <div class="farm-map-card">
                 <h2 id="farm-map-title">Your farm, from above</h2>
+                @if ($farm->latitude !== null && $farm->longitude !== null)
+                    <p class="farm-map-coordinates">{{ $farm->latitude }}, {{ $farm->longitude }}</p>
+                @else
+                    <p class="farm-map-coordinates">Awaiting data</p>
+                @endif
                 <p class="plot-selection-hint" id="plot-selection-hint">Choose a crop from the library, then select a plot.</p>
                 <p class="plot-request-message" id="plot-request-message" role="status" aria-live="polite" hidden></p>
 
@@ -77,6 +115,24 @@
                 @else
                     <p class="farm-map-message">Your farm map will appear here once its location has been saved.</p>
                 @endif
+
+                @if ($farm->latitude !== null && $farm->longitude !== null)
+                    <button class="farm-boundary-toggle" id="farm-boundary-toggle" type="button" aria-pressed="true">
+                        Hide farm boundary
+                    </button>
+                @endif
+                <section class="plot-details-card" id="plot-details-card" aria-live="polite" hidden>
+                    <h3 id="plot-details-name"></h3>
+                    <dl>
+                        <div><dt>Area</dt><dd id="plot-details-area"></dd></div>
+                        <div><dt>Crop</dt><dd id="plot-details-crop"></dd></div>
+                        <div><dt>Status</dt><dd id="plot-details-status"></dd></div>
+                        <div><dt>Suitability</dt><dd id="plot-details-suitability"></dd></div>
+                        <div><dt>Seasonal water demand</dt><dd id="plot-details-water"></dd></div>
+                        <div><dt>Comment</dt><dd id="plot-details-comment"></dd></div>
+                    </dl>
+                    <button class="farm-plot-remove" id="plot-details-remove" type="button" hidden>Remove crop</button>
+                </section>
 
                 <div class="farm-map-layers" role="tablist" aria-label="Map layers">
                     <button class="farm-map-layer is-active" type="button" role="tab" aria-selected="true">Satellite View</button>
@@ -94,30 +150,159 @@
                 <article class="farm-data-card">
                     <h2>Soil</h2>
                     <dl>
-                        <div><dt>Soil type</dt><dd>{{ $farm->soilType?->name ?? 'Awaiting data' }}</dd></div>
-                        <div><dt>pH</dt><dd>{{ $farm->soilReport?->ph ?? 'Awaiting data' }}</dd></div>
-                        <div><dt>Salinity</dt><dd>{{ $farm->soilReport?->salinity ?? 'Awaiting data' }}</dd></div>
-                        <div><dt>Nitrogen</dt><dd>{{ $farm->soilReport?->nitrogen ?? 'Awaiting data' }}</dd></div>
-                        <div><dt>Phosphorus</dt><dd>{{ $farm->soilReport?->phosphorus ?? 'Awaiting data' }}</dd></div>
-                        <div><dt>Potassium</dt><dd>{{ $farm->soilReport?->potassium ?? 'Awaiting data' }}</dd></div>
+                        <div><dt>Soil type</dt><dd data-condition-field="soil.type">{{ data_get($insights, 'soil.type') ?? $farm->soilType?->name ?? 'Awaiting data' }}</dd></div>
+                        <div><dt>pH</dt><dd data-condition-field="soil.ph">{{ data_get($insights, 'soil.ph') ?? $farm->soilReport?->ph ?? 'Awaiting data' }}</dd></div>
+                        <div><dt>Salinity</dt><dd data-condition-field="soil.salinity">{{ data_get($insights, 'soil.salinity') ?? $farm->soilReport?->salinity ?? 'Awaiting data' }}</dd></div>
+                        <div><dt>Moisture</dt><dd data-condition-field="soil.moisture_pct">{{ data_get($insights, 'soil.moisture_pct') ?? 'Awaiting data' }}</dd></div>
+                        <div><dt>Soil health</dt><dd data-condition-field="soil.health_score">{{ data_get($insights, 'soil.health_score') ?? 'Awaiting data' }}</dd></div>
+                        <div><dt>Nitrogen</dt><dd data-condition-field="soil.nitrogen">{{ data_get($insights, 'soil.nitrogen') ?? $farm->soilReport?->nitrogen ?? 'Awaiting data' }}</dd></div>
+                        <div><dt>Phosphorus</dt><dd data-condition-field="soil.phosphorus">{{ data_get($insights, 'soil.phosphorus') ?? $farm->soilReport?->phosphorus ?? 'Awaiting data' }}</dd></div>
+                        <div><dt>Potassium</dt><dd data-condition-field="soil.potassium">{{ data_get($insights, 'soil.potassium') ?? $farm->soilReport?->potassium ?? 'Awaiting data' }}</dd></div>
                     </dl>
                 </article>
 
                 <article class="farm-data-card">
                     <h2>Water</h2>
                     <dl>
-                        <div><dt>Irrigation source</dt><dd>{{ $farm->irrigation_source ?: 'Awaiting data' }}</dd></div>
-                        <div><dt>Water availability</dt><dd>Awaiting data</dd></div>
+                        <div><dt>Irrigation source</dt><dd data-condition-field="water.irrigation_source">{{ data_get($insights, 'water.irrigation_source') ?? ($farm->irrigation_source ?: 'Awaiting data') }}</dd></div>
+                        <div><dt>Water availability</dt><dd data-condition-field="water.available_m3">{{ data_get($insights, 'water.available_m3') ?? 'Awaiting data' }}</dd></div>
+                        <div><dt>Water required</dt><dd data-condition-field="water.required_m3">{{ data_get($insights, 'water.required_m3') ?? 'Awaiting data' }}</dd></div>
+                        <div><dt>Water balance</dt><dd data-condition-field="water.balance_m3">{{ data_get($insights, 'water.balance_m3') ?? 'Awaiting data' }}</dd></div>
                     </dl>
                 </article>
 
                 <article class="farm-data-card">
                     <h2>Climate</h2>
                     <dl>
-                        <div><dt>Climate observations</dt><dd>Awaiting data</dd></div>
+                        <div><dt>Climate observations</dt><dd data-condition-field="climate.observations">{{ data_get($insights, 'climate.observations') ?? 'Awaiting data' }}</dd></div>
                         <div><dt>Farm agent ID</dt><dd>{{ $farm->agent_farmer_id ?: 'Awaiting data' }}</dd></div>
                     </dl>
                 </article>
+            </section>
+
+            <section class="scenario-card" aria-labelledby="scenario-title">
+                <h2 id="scenario-title">Configure Your Simulation</h2>
+                <p class="scenario-description">Review the selected farm and planted plots, then save a scenario configuration.</p>
+
+                <div class="scenario-readonly">
+                    <div>
+                        <h3>Selected farm</h3>
+                        <p>{{ $farm->city }} Farm · {{ $farm->area !== null ? ($farm->area + 0) . ' ' . $farm->area_unit : 'Awaiting data' }}</p>
+                    </div>
+                    <div>
+                        <h3>Selected plots and crops</h3>
+                        <ul id="scenario-selected-plots" aria-live="polite">
+                            @forelse ($plots->filter(fn ($plot) => $plot->crop)->values() as $plot)
+                                <li>{{ $plot->name }} · {{ $plot->crop->name }}</li>
+                            @empty
+                                <li class="scenario-empty">No plots with assigned crops.</li>
+                            @endforelse
+                        </ul>
+                    </div>
+                    <div>
+                        <h3>Soil conditions</h3>
+                        <dl>
+                            <div><dt>Soil type</dt><dd>{{ $farm->soilType?->name ?: 'Awaiting data' }}</dd></div>
+                            <div><dt>pH</dt><dd>{{ $farm->soilReport?->ph ?? 'Awaiting data' }}</dd></div>
+                            <div><dt>Salinity</dt><dd>{{ $farm->soilReport?->salinity ?? 'Awaiting data' }}</dd></div>
+                            <div><dt>Nitrogen</dt><dd>{{ $farm->soilReport?->nitrogen ?? 'Awaiting data' }}</dd></div>
+                            <div><dt>Phosphorus</dt><dd>{{ $farm->soilReport?->phosphorus ?? 'Awaiting data' }}</dd></div>
+                            <div><dt>Potassium</dt><dd>{{ $farm->soilReport?->potassium ?? 'Awaiting data' }}</dd></div>
+                        </dl>
+                    </div>
+                </div>
+
+                <form id="scenario-form" class="scenario-form">
+                    <p class="scenario-readiness" id="scenario-readiness" role="status" aria-live="polite"></p>
+                    <div class="scenario-fields">
+                        <label>
+                            Scenario name (optional)
+                            <input
+                                type="text"
+                                name="name"
+                                maxlength="60"
+                                value="{{ $latestSimulation?->name ?? '' }}"
+                                autocomplete="off"
+                            >
+                            <span class="scenario-field-error" data-error-for="name"></span>
+                        </label>
+                        <label>
+                            Planting season
+                            <select name="planting_season" required>
+                                <option value="">Choose a season</option>
+                                @foreach ($simulationOptions['planting_seasons'] as $key => $label)
+                                    <option value="{{ $key }}" @selected(($scenarioSettings['planting_season'] ?? '') === $key)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                            <span class="scenario-field-error" data-error-for="planting_season"></span>
+                        </label>
+                        <label>
+                            Start date
+                            <input type="date" name="start_date" value="{{ $scenarioSettings['start_date'] ?? '' }}" required>
+                            <span class="scenario-field-error" data-error-for="start_date"></span>
+                        </label>
+                        <label>
+                            Duration in days
+                            <div class="scenario-duration">
+                                <input
+                                    type="number"
+                                    name="duration_days"
+                                    min="{{ $simulationOptions['duration_min'] }}"
+                                    max="{{ $simulationOptions['duration_max'] }}"
+                                    value="{{ $scenarioSettings['duration_days'] ?? '' }}"
+                                    required
+                                >
+                                <span>End date: <strong id="scenario-end-date">Awaiting data</strong></span>
+                            </div>
+                            <span class="scenario-field-error" data-error-for="duration_days"></span>
+                        </label>
+                        <label>
+                            Water availability scenario
+                            <select name="water_scenario" required>
+                                <option value="">Choose water availability</option>
+                                @foreach ($simulationOptions['water_scenarios'] as $key => $label)
+                                    <option value="{{ $key }}" @selected(($scenarioSettings['water_scenario'] ?? '') === $key)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                            <span class="scenario-field-error" data-error-for="water_scenario"></span>
+                        </label>
+                        <label>
+                            Climate scenario
+                            <select name="climate_scenario" required>
+                                <option value="">Choose a climate scenario</option>
+                                @foreach ($simulationOptions['climate_scenarios'] as $key => $label)
+                                    <option value="{{ $key }}" @selected(($scenarioSettings['climate_scenario'] ?? '') === $key)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                            <span class="scenario-field-error" data-error-for="climate_scenario"></span>
+                        </label>
+                    </div>
+
+                    <p class="scenario-message" id="scenario-message" role="status" aria-live="polite" hidden></p>
+                    <div class="scenario-actions">
+                        <button class="scenario-reset" type="reset">Reset Configuration</button>
+                        <button class="scenario-save" type="submit">Save Scenario</button>
+                        <button class="scenario-run" type="button" disabled title="Save a scenario before running it">Run Simulation</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="simulation-insights" id="simulation-insights" aria-labelledby="simulation-insights-title">
+                <h2 id="simulation-insights-title">Simulation Insights</h2>
+                <p class="insights-empty" id="insights-empty" @if ($insights) hidden @endif>Run a simulation to see insights.</p>
+                <p class="insight-summary" id="insight-summary" @if (! $insights) hidden @endif></p>
+                <div class="insights-grid" id="insights-grid" @if (! $insights) hidden @endif>
+                    <article class="insight-card"><h3>Overall suitability</h3><div data-insight-field="overall_suitability_pct"></div></article>
+                    <article class="insight-card"><h3>Crop Suitability per plot</h3><div data-insight-field="plots"></div></article>
+                    <article class="insight-card"><h3>Water Demand</h3><div data-insight-field="water_demand"></div></article>
+                    <article class="insight-card"><h3>Soil Compatibility</h3><div data-insight-field="soil_compatibility"></div></article>
+                    <article class="insight-card"><h3>Scenario Comparison</h3><div data-insight-field="scenario_comparison"></div></article>
+                    <article class="insight-card"><h3>Climate Risk</h3><div data-insight-field="climate_risk"></div></article>
+                    <article class="insight-card"><h3>AI Recommendations</h3><div data-insight-field="ai_recommendations"></div></article>
+                    <article class="insight-card"><h3>Crop Rotation</h3><div data-insight-field="crop_rotation"></div></article>
+                    <article class="insight-card"><h3>Confidence</h3><div data-insight-field="confidence"></div></article>
+                    <article class="insight-card"><h3>Data Sources</h3><div data-insight-field="data_sources"></div></article>
+                </div>
             </section>
         </section>
 
@@ -154,6 +339,7 @@
                         <p class="selected-crops-empty">No crops selected yet.</p>
                     @endforelse
                 </div>
+                <p class="selected-crops-total" id="selected-crops-total" aria-live="polite">0 crops · 0 feddan</p>
             </section>
 
             <div class="crop-library-filters" aria-label="Filter crops by category">
@@ -225,6 +411,25 @@
             </div>
             <p class="crop-library-empty" id="crop-library-empty" hidden>No crops match your search.</p>
         </aside>
+    </div>
+
+    <div class="simulation-overlay" id="simulation-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="simulation-overlay-title">
+        <section class="simulation-overlay-card">
+            <h2 id="simulation-overlay-title">Simulation in progress</h2>
+            <p id="simulation-overlay-scenario"></p>
+            <ol class="simulation-stages" id="simulation-stages">
+                <li data-stage="validating">Validating</li>
+                <li data-stage="sending">Sending</li>
+                <li data-stage="waiting">Waiting</li>
+                <li data-stage="saving">Saving</li>
+            </ol>
+            <p class="simulation-overlay-error" id="simulation-overlay-error" role="alert" hidden></p>
+            <div class="simulation-overlay-actions">
+                <button type="button" id="simulation-cancel">Cancel</button>
+                <button type="button" id="simulation-close" hidden>Close</button>
+                <button type="button" id="simulation-retry" hidden>Retry</button>
+            </div>
+        </section>
     </div>
 
 </main>

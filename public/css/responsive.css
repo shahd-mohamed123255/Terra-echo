@@ -45,9 +45,6 @@
     .farm-step .priority-choice > span { height: 100%; }
     .d-block .hint { margin-bottom: 14px; line-height: 1.5; }
 
-    /* كروت التربة: 3 جنب بعض بدل واحد تحت التاني */
-    .soil-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-    .soil-card { width: auto; padding: 8px 4px; font-size: 14px; }
     .soil-svg { height: 70px; }
 
     /* Summary */
@@ -56,4 +53,9 @@
 
     .actions { gap: 10px; }
     .actions .btn { flex: 1; text-align: center; }
+}
+
+@media (max-width: 700px) {
+    .soil-cards { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
+    .soil-card { width: 120px; padding: 0; }
 }

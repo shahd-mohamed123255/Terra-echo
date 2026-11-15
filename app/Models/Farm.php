@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Farm extends Model
@@ -46,5 +47,10 @@ class Farm extends Model
         return $this->belongsToMany(Crop::class, 'farm_crop')
             ->withPivot('type')
             ->withTimestamps();
+    }
+
+    public function fields(): HasMany
+    {
+        return $this->hasMany(Field::class);
     }
 }
