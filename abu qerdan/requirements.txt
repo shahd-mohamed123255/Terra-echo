@@ -1,0 +1,9 @@
+fastapi>=0.110
+uvicorn[standard]>=0.27
+
+# Optional data readers:
+# openpyxl>=3.1       # Excel
+# pandas>=2.1         # Parquet
+# pyarrow>=14         # Parquet engine
+# xarray>=2024.1      # NetCDF
+# rasterio>=1.3       # GeoTIFF

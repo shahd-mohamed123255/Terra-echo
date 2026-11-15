@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Field Shift AI · Terra Echo Farm Intelligence</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Almendra:ital,wght@0,400;0,700;1,400&family=Noto+Sans:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #050816;
+    --sky: #4CC9FF;
+    --blue: #1EA7FF;
+    --yellow: #FFC83D;
+    --muted: #A9C0E5;
+    --grey: #767B84;
+    --glass: rgba(255, 255, 255, .08);
+    --glass-border: rgba(255, 255, 255, .1);
+    --serif: 'Almendra', Georgia, serif;
+    --sans: 'Noto Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: #fff;
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: inherit; text-decoration: none; }
+  ul { list-style: none; }
+
+  /* ---------- Page + layered space background ---------- */
+  .page {
+    position: relative;
+    overflow: hidden;
+    min-height: 2634px;
+    background: var(--bg);
+  }
+
+  .page__bg,
+  .page__bg-earth,
+  .page__bg-fade {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3655px;
+    pointer-events: none;
+  }
+  /* starfield */
+  .page__bg {
+    background: url("/files/stars.jpg") -300px 0 / auto 3655px repeat-x;
+  }
+  /* earth + satellite, very faint (22% in the design) */
+  .page__bg-earth {
+    background: url("/files/earth.jpg") -2523px 0 / auto 3655px no-repeat;
+    opacity: .22;
+  }
+  /* blue tint at the top, fading into the page colour */
+  .page__bg-fade {
+    background: linear-gradient(to bottom,
+      rgba(30, 167, 255, .10) 1.8%,
+      rgba(5, 8, 22, 0) 46.8%,
+      var(--bg) 100%);
+  }
+
+  .page > *:not(.page__bg):not(.page__bg-earth):not(.page__bg-fade) {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ---------- Header ---------- */
+  .site-header {
+    margin-top: 9px;
+    height: 74px;
+    background: rgba(11, 18, 32, .8);
+    border-bottom: 1px solid var(--glass-border);
+    -webkit-backdrop-filter: blur(2.5px);
+    backdrop-filter: blur(2.5px);
+  }
+
+  .site-header__inner {
+    position: relative;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding: 0 66px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--serif);
+    font-size: 32px;
+    line-height: 1;
+    color: #fff;
+  }
+  .brand img {
+    width: 50px; height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  .nav {
+    position: absolute;
+    left: 430px;
+    top: 0; bottom: 0;
+    width: 800px;
+    display: flex;
+    align-items: center;
+  }
+  .nav a {
+    flex: 1;
+    text-align: center;
+    font-size: 18px;
+    color: rgba(255, 255, 255, .7);
+    transition: color .2s;
+  }
+  .nav a:hover { color: #fff; }
+  .nav a.nav__small { font-size: 15px; color: var(--grey); }
+  .nav a.nav__small:hover { color: #fff; }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    padding: 41px 24px 0;
+    text-align: center;
+  }
+
+  .eyebrow {
+    display: block;
+    font-family: var(--serif);
+    font-size: 24px;
+    line-height: 28px;
+    color: var(--sky);
+  }
+  .eyebrow::after {
+    content: "";
+    display: block;
+    width: 35px;
+    height: 2px;
+    margin: 20px auto 0;
+    background: var(--blue);
+  }
+
+  .hero h1 {
+    max-width: 960px;
+    margin: 19px auto 0;
+    font-weight: 400;
+    font-size: 76px;
+    line-height: 88px;
+  }
+
+  .hero__sub {
+    max-width: 850px;
+    margin: 30px auto 0;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 28px;
+    line-height: 38px;
+    color: var(--muted);
+  }
+
+  .hero .eyebrow--select { margin-top: 51px; }
+
+  /* ---------- Plan cards ---------- */
+  .plans {
+    width: 1160px;
+    max-width: 100%;
+    margin: 37px auto 0;
+    position: relative;
+    left: 12px;                 /* matches the design (cards sit 12px right of centre) */
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+  }
+
+  .plan {
+    flex: 0 0 360px;
+    padding: 32px;
+    border-radius: 32px;
+    background: var(--glass);
+    box-shadow: inset 0 0 0 1px var(--glass-border), 0 20px 40px rgba(0, 0, 0, .25);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    transition: transform .25s ease, box-shadow .25s ease;
+  }
+  .plan:hover {
+    transform: translateY(-4px);
+    box-shadow: inset 0 0 0 1px rgba(76, 201, 255, .35), 0 20px 40px rgba(0, 0, 0, .25);
+  }
+
+  .plan--featured {
+    flex-basis: 392px;
+    box-shadow: inset 0 0 0 2px var(--blue), 0 20px 40px rgba(0, 0, 0, .25), 0 0 48px rgba(30, 167, 255, .22);
+  }
+  .plan--featured:hover {
+    box-shadow: inset 0 0 0 2px var(--blue), 0 20px 40px rgba(0, 0, 0, .25), 0 0 48px rgba(30, 167, 255, .22);
+  }
+
+  .plan__title {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 48px;
+    line-height: 56px;
+  }
+
+  .plan__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 34px;
+  }
+  .plan__head h3 {
+    font-family: var(--sans);
+    font-weight: 400;
+    font-size: 32px;
+    line-height: 34px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 145px;
+    width: 145px;
+    height: 34px;
+    padding: 0 0 0 17.5px;
+    border: 1px solid var(--blue);
+    border-radius: 17px;
+    background: rgba(30, 167, 255, .1);
+    color: var(--blue);
+    font-size: 14px;
+    white-space: nowrap;
+  }
+  .badge::before {
+    content: "";
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--blue);
+  }
+
+  .plan__tier {
+    margin-top: 23px;
+    font-size: 18px;
+    line-height: 28px;
+    color: var(--muted);
+  }
+
+  .plan__title + .plan__features { margin-top: 17px; }
+  .plan__tier + .plan__features { margin-top: 16px; }
+
+  .plan__features { margin-bottom: 17px; }
+  .plan__features li {
+    position: relative;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    padding-left: 20px;
+    font-size: 16px;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .plan__features li::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 50%;
+    width: 8px; height: 8px;
+    margin-top: -4px;
+    border-radius: 50%;
+    background: var(--sky);
+  }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 57px;
+    border-radius: 29px;
+    background: var(--yellow);
+    color: var(--bg);
+    font-family: var(--serif);
+    font-size: 22px;
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(255, 200, 61, .35); }
+  .btn:focus-visible,
+  .nav a:focus-visible,
+  .brand:focus-visible { outline: 2px solid var(--sky); outline-offset: 4px; }
+
+  /* ---------- Compare table ---------- */
+  .compare { margin-top: 96px; text-align: center; }
+  .compare .eyebrow--compare { margin: 0; }
+
+  .table-wrap {
+    width: 1200px;
+    max-width: calc(100% - 48px);
+    margin: 25px auto 0;
+    border-radius: 32px;
+    background: var(--glass);
+    box-shadow: inset 0 0 0 1px var(--glass-border), 0 20px 40px rgba(0, 0, 0, .25);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    overflow-x: auto;
+    text-align: left;
+  }
+
+  table {
+    width: 100%;
+    min-width: 760px;
+    border-collapse: collapse;
+    font-size: 18px;
+  }
+  th, td {
+    height: 70px;
+    padding: 0 0 0 24px;
+    font-weight: 400;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--glass-border);
+    white-space: nowrap;
+  }
+  tbody tr:last-child th,
+  tbody tr:last-child td { border-bottom: 0; }
+
+  thead th { color: #fff; }
+  tbody th { color: var(--muted); }
+  tbody td { color: #fff; }
+
+  th:nth-child(1) { width: 240px; }
+  th:nth-child(2),
+  th:nth-child(3) { width: 320px; }
+
+  /* ---------- CTA ---------- */
+  .cta {
+    position: relative;
+    margin: 94px 0 0;
+    height: 360px;
+    background: url("/files/earth.jpg") 0 -226px / 100% auto no-repeat;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .cta::before {
+    content: "";
+    position: absolute; inset: 0;
+    background: linear-gradient(to bottom, rgba(5, 8, 22, 0), var(--bg));
+  }
+  .cta > * { position: relative; }
+
+  .cta h2 {
+    max-width: 800px;
+    font-weight: 400;
+    font-size: 60px;
+    line-height: 70px;
+  }
+
+  .cta .btn {
+    width: 152px;
+    height: 62px;
+    margin-top: 17px;
+    border-radius: 31px;
+    font-size: 24px;
+    box-shadow: 0 10px 24px rgba(255, 200, 61, .4);
+  }
+  .cta .btn:hover { box-shadow: 0 14px 30px rgba(255, 200, 61, .55); }
+
+  .page-end { height: 45px; }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 1180px) {
+    .nav { position: static; flex: 1; width: auto; margin-left: 48px; }
+    .plans { flex-direction: column; align-items: center; left: 0; width: 100%; padding: 0 24px; }
+    .plan, .plan--featured { flex: none; width: 100%; max-width: 392px; }
+  }
+
+  @media (max-width: 720px) {
+    .site-header__inner { padding: 0 20px; }
+    .brand { font-size: 26px; }
+    .brand img { width: 40px; height: 40px; }
+    .nav { margin-left: 16px; }
+    .nav a { font-size: 15px; }
+    .nav a.nav__small { font-size: 13px; }
+
+    .hero h1 { font-size: 42px; line-height: 50px; }
+    .hero__sub { font-size: 21px; line-height: 30px; }
+    .eyebrow { font-size: 20px; }
+    .cta h2 { font-size: 36px; line-height: 44px; padding: 0 20px; }
+    .page { min-height: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+<style>
+  .site-header { position: sticky; top: 0; z-index: 5; margin-top: 0; }
+  .site-header__inner { justify-content: space-between; gap: 24px; padding: 0 clamp(18px, 5vw, 66px); }
+  .nav { position: static; width: auto; margin: 0; gap: clamp(14px, 3vw, 42px); }
+  .nav a { flex: initial; white-space: nowrap; }
+  .nav a.nav__small { font-size: 15px; color: var(--muted); }
+  .hero { padding-top: 54px; }
+  .hero h1 { font-size: clamp(42px, 6vw, 76px); line-height: 1.12; }
+  .section-shell { width: min(1160px, calc(100% - 40px)); margin: 46px auto 0; }
+  .section-title { margin-bottom: 20px; text-align: center; }
+  .section-title h2 { margin-top: 18px; font-size: clamp(30px, 4vw, 44px); font-weight: 400; }
+  .farm-card, .agent-card, .data-card { padding: clamp(20px, 4vw, 36px); border: 1px solid var(--glass-border); border-radius: 24px; background: var(--glass); backdrop-filter: blur(12px); }
+  .farm-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+  .farm-grid label { display: grid; gap: 7px; color: var(--muted); font-size: 14px; }
+  .farm-grid input, .farm-grid select, .agent-compose input { width: 100%; min-width: 0; height: 46px; padding: 0 13px; border: 1px solid var(--glass-border); border-radius: 10px; background: rgba(5, 8, 22, .72); color: #fff; font: inherit; }
+  .section-shell .plans { left: 0; }
+  .plan { min-width: 0; }
+  .plan__features li { white-space: normal; height: auto; min-height: 36px; }
+  .plan .btn, .farm-actions .btn { width: 100%; border: 0; cursor: pointer; }
+  .plan .btn[disabled] { opacity: .5; cursor: wait; }
+  .plan__meta { margin: 12px 0 16px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+  .plan__focus { min-height: 48px; color: var(--sky); font-size: 14px; }
+  .farm-actions { display: flex; justify-content: center; gap: 12px; margin-top: 18px; }
+  .farm-actions .btn { max-width: 220px; }
+  .ghost-btn { min-height: 48px; padding: 0 20px; border: 1px solid var(--glass-border); border-radius: 28px; background: transparent; color: #fff; cursor: pointer; font: inherit; }
+  .agent-layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 20px; }
+  .agent-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 18px; }
+  .agent-heading h2 { font-size: 30px; font-weight: 400; }
+  .agent-heading p, .data-note { margin-top: 8px; color: var(--muted); line-height: 1.6; }
+  .chat-log { min-height: 220px; max-height: 360px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 14px; background: rgba(5, 8, 22, .58); }
+  .chat-message { max-width: 90%; padding: 12px 15px; border: 1px solid var(--glass-border); border-radius: 14px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .chat-message.user { align-self: flex-end; background: rgba(30, 167, 255, .16); }
+  .chat-message.assistant { align-self: flex-start; }
+  .chat-compose { display: flex; gap: 10px; margin-top: 12px; }
+  .chat-compose .btn { width: 120px; flex: 0 0 120px; border: 0; cursor: pointer; }
+  .chat-suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .chat-suggestions button { padding: 8px 11px; border: 1px solid var(--glass-border); border-radius: 20px; background: transparent; color: var(--muted); cursor: pointer; }
+  .evidence { margin-top: 10px; padding: 11px 13px; border-left: 2px solid var(--sky); background: rgba(30, 167, 255, .08); color: var(--muted); font-size: 13px; line-height: 1.55; }
+  .mode-tag { display: inline-block; margin-top: 9px; color: var(--sky); font-size: 12px; }
+  .dataset-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 18px; }
+  .dataset-stat { padding: 16px; border-radius: 14px; background: rgba(5, 8, 22, .5); }
+  .dataset-stat b { display: block; font-size: 22px; color: var(--sky); }
+  .dataset-stat span { display: block; margin-top: 6px; color: var(--muted); font-size: 13px; }
+  .loading-note { color: var(--muted); text-align: center; }
+  @media (max-width: 850px) {
+    .farm-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .agent-layout { grid-template-columns: 1fr; }
+    .agent-card { min-width: 0; }
+    .dataset-stats { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 720px) {
+    .site-header { height: auto; min-height: 70px; }
+    .site-header__inner { flex-wrap: wrap; justify-content: center; padding: 10px 14px; }
+    .brand { font-size: 24px; }
+    .nav { width: 100%; justify-content: center; gap: 18px; }
+    .nav a, .nav a.nav__small { font-size: 13px; }
+    .hero { padding-top: 36px; }
+    .farm-grid { grid-template-columns: 1fr 1fr; }
+    .chat-compose { flex-direction: column; }
+    .chat-compose .btn { width: 100%; flex-basis: 48px; }
+    .cta { background-size: auto 100%; }
+  }
+</style>
+<link rel="stylesheet" href="/files/workspace.css">
+</head>
+<body class="dashboard-page">
+<div class="page">
+  <div class="page__bg"></div>
+  <div class="page__bg-earth"></div>
+  <div class="page__bg-fade"></div>
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a class="brand" href="#home" aria-label="Field Shift AI home">
+        <img src="/files/logo.png" alt="">
+        <span>Field Shift AI</span>
+      </a>
+      <span class="topbar-title">Dashboard</span>
+      <div class="language-switch" role="group" aria-label="Interface language">
+        <button type="button" data-language="en" aria-pressed="true">EN</button>
+        <span aria-hidden="true">|</span>
+        <button type="button" data-language="ar" aria-pressed="false">AR</button>
+      </div>
+      <nav class="nav" aria-label="Main">
+        <a href="#home" aria-current="page">Dashboard</a>
+        <a href="#agent">AI Agent</a>
+        <a href="#planning">Planning</a>
+        <a href="/simulation">Simulation</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" id="home">
+      <span class="eyebrow">From space to soil</span>
+      <h1>Make every field decision with evidence</h1>
+      <p class="hero__sub">Explore Egypt crop-season histories, build a plan, then simulate it with the same farm inputs.</p>
+    </section>
+
+    <section class="section-shell farm-card" aria-labelledby="farm-heading">
+      <div class="section-title">
+        <span class="eyebrow">Dashboard · Local project data</span>
+        <h2 id="farm-heading">Farm context</h2>
+      </div>
+      <p class="data-note">The prefilled farm is illustrative. Edit these agricultural parameters to generate tailored multi-plan strategies.</p>
+      <div class="farm-grid">
+        <label for="farm-area">Farm area (ha)<input id="farm-area" type="number" min="0.1" step="0.1" value="10"></label>
+        <label for="farm-crop">Current crop<select id="farm-crop"></select></label>
+        <label for="farm-soil">Soil type<select id="farm-soil"><option value="clay">Clay</option><option value="loam">Loam</option><option value="silt">Silt</option><option value="sandy">Sandy</option></select></label>
+        <label for="farm-zone">Closest data zone<select id="farm-zone"></select></label>
+        <label for="farm-season">Planning season<select id="farm-season"><option value="winter">Winter</option><option value="summer">Summer</option></select></label>
+        <label for="farm-water">Available irrigation (mm)<input id="farm-water" type="number" min="0" step="10" placeholder="Optional · e.g. 500"></label>
+        <label for="farm-temp">Temperature scenario<select id="farm-temp"><option value="0">Historical baseline</option><option value="1">+1°C</option><option value="2">+2°C</option><option value="-1">−1°C</option></select></label>
+        <label for="farm-rain">Rainfall scenario<select id="farm-rain"><option value="0">Historical baseline</option><option value="-10">−10%</option><option value="-20">−20%</option><option value="10">+10%</option></select></label>
+      </div>
+      <div class="farm-actions">
+        <button class="btn" id="refresh-plans" type="button">Generate Agricultural Plans</button>
+        <a class="ghost-btn" href="/simulation">Open simulation</a>
+      </div>
+    </section>
+
+    <section class="section-shell" id="planning">
+      <div class="section-title">
+        <span class="eyebrow">Planning · Smart Multi-Plan Generation</span>
+        <h2>Smart Agricultural Planning</h2>
+      </div>
+      <p class="data-note" id="plan-note">Loading the project crop-season dataset…</p>
+      <div class="plans" id="crop-plans" aria-live="polite">
+        <p class="loading-note">Reading local agricultural data…</p>
+      </div>
+
+      <!-- Comparison Section -->
+      <div class="comparison-section" id="plan-comparison-section" style="margin-top:36px; display:none;">
+        <div class="section-title" style="margin-bottom:12px;">
+          <span class="eyebrow">Side-by-Side Comparison</span>
+          <h3>Side-by-Side Plan Comparison</h3>
+        </div>
+        <p class="data-note" style="text-align:center;">Compare agricultural suitability, water consumption, estimated yields, and primary risks across all generated plans.</p>
+        <div class="comparison-table-wrap" id="comparison-table-container"></div>
+      </div>
+    </section>
+
+    <!-- Plan Details Modal -->
+    <div class="fs-modal-overlay" id="plan-detail-modal" role="dialog" aria-modal="true" aria-labelledby="modal-plan-title">
+      <div class="fs-modal-card">
+        <div class="fs-modal-header">
+          <h2 id="modal-plan-title">Plan Details</h2>
+          <button type="button" class="fs-modal-close" id="modal-plan-close" aria-label="Close">✕</button>
+        </div>
+        <div class="fs-modal-body" id="modal-plan-body"></div>
+      </div>
+    </div>
+
+    <section class="section-shell agent-card" id="agent">
+      <div class="agent-heading">
+        <div>
+          <span class="eyebrow">Abu Qerdan · Agricultural assistant</span>
+          <h2>Ask about the data and your plan</h2>
+          <p>Responses combine retrieved local dataset evidence with the existing Agent API. No language model is implied when the API reports fallback mode.</p>
+        </div>
+        <span class="badge" id="agent-mode">Local data ready</span>
+      </div>
+      <div class="agent-layout">
+        <div>
+          <div class="chat-log" id="chat-log" aria-live="polite">
+            <div class="chat-message assistant">I can retrieve historical crop, season, irrigation, temperature, vegetation-index, and national-yield information from the files in this project. Results are screening evidence, not farm-specific prescriptions.</div>
+          </div>
+          <form class="chat-compose" id="chat-form">
+            <input id="chat-input" autocomplete="off" placeholder="Ask about crop seasons, water, temperature, or yield…" aria-label="Message Abu Qerdan">
+            <button class="btn" type="submit">Ask</button>
+          </form>
+          <div class="chat-suggestions">
+            <button type="button" data-question="Which plan is most suitable for my conditions?">Best plan advice</button>
+            <button type="button" data-question="Why did Plan A perform better than Plan B?">Compare plans</button>
+            <button type="button" data-question="Is the water supply sufficient?">Water sufficiency</button>
+            <button type="button" data-question="What should I change to improve the selected plan?">Improve plan</button>
+            <button type="button" data-question="Show the national yield trend for wheat">Yield history</button>
+          </div>
+        </div>
+        <aside>
+          <h3>Evidence boundary</h3>
+          <p class="data-note">Historical observations and screened crop requirements are distinct from predictions. Yield values are national, not field-level. Optional LLM answers require server-side provider configuration.</p>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section-shell data-card" aria-label="Dataset summary">
+      <div class="section-title">
+        <span class="eyebrow">Project data</span>
+        <h2>What this workspace contains</h2>
+      </div>
+      <div class="dataset-stats" id="dataset-stats">
+        <div class="dataset-stat"><b>—</b><span>Crop-zone-month rows</span></div>
+        <div class="dataset-stat"><b>—</b><span>Complete seasonal profiles</span></div>
+        <div class="dataset-stat"><b>—</b><span>National crop-year records</span></div>
+        <div class="dataset-stat"><b>—</b><span>Crop types in monthly data</span></div>
+      </div>
+      <p class="data-note">The 8-row sample weather CSV is explicitly illustrative and is not used as observed weather.</p>
+    </section>
+
+    <section class="cta">
+      <h2>Carry this plan into the simulation</h2>
+      <a class="btn" href="/simulation">Open My Farm</a>
+    </section>
+  </main>
+  <div class="page-end"></div>
+</div>
+<script src="/files/app.js"></script>
+<script src="/files/i18n.js"></script>
+<script src="/files/planning.js"></script>
+</body>
+</html>

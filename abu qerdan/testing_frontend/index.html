@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Terra Echo AI · Agent Lab</title>
+  <style>
+    :root{font-family:Inter,Segoe UI,Arial,sans-serif;color:#173b32;background:#f3f7f2}
+    *{box-sizing:border-box}body{margin:0}header{background:#123d32;color:#fff;padding:22px max(5vw,20px)}
+    header small{color:#b9d8bd;letter-spacing:.12em;text-transform:uppercase}h1{margin:.35rem 0;font-size:1.55rem}
+    main{max-width:1180px;margin:24px auto;padding:0 18px;display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    section{background:#fff;border:1px solid #dce8dd;border-radius:12px;padding:18px;box-shadow:0 3px 12px #164d3010}
+    .wide{grid-column:1/-1}h2{font-size:1.05rem;margin:0 0 12px}label{display:block;font-size:.84rem;font-weight:650;margin:10px 0 5px}
+    textarea,input,select{width:100%;border:1px solid #c8d8ca;border-radius:7px;padding:9px;font:inherit;color:#173b32}
+    textarea{min-height:180px;resize:vertical;font-family:Consolas,monospace;font-size:.82rem}
+    button{border:0;border-radius:7px;background:#24754f;color:#fff;padding:9px 13px;font:inherit;font-weight:650;cursor:pointer;margin:8px 6px 0 0}
+    button:hover{background:#1b5b3e}.secondary{background:#e5efe5;color:#204c3c}.row{display:flex;flex-wrap:wrap;gap:5px}
+    pre{white-space:pre-wrap;overflow:auto;background:#f5f8f5;border:1px solid #e0e9e1;border-radius:7px;padding:12px;min-height:110px;max-height:420px;font-size:.82rem}
+    .status{font-size:.84rem;color:#547064}.chatlog{height:240px;overflow:auto;border:1px solid #e0e9e1;border-radius:7px;padding:10px;margin-bottom:8px}
+    .message{margin:8px 0;white-space:pre-wrap}.user{color:#225d8a}.assistant{color:#205c3d}
+    @media(max-width:760px){main{grid-template-columns:1fr}.wide{grid-column:auto}}
+  </style>
+</head>
+<body>
+  <header><small>Terra Echo · AI component test bench</small><h1>Abu Qerdan — Agricultural Intelligence Agent</h1></header>
+  <main>
+    <section>
+      <h2>Farm Summary JSON</h2>
+      <textarea id="summary" spellcheck="false"></textarea>
+      <div class="row">
+        <button class="secondary" id="loadSample">Load sample</button>
+        <button id="analyze">Analyze farm</button>
+        <button id="plan">Generate rotations</button>
+        <button id="start">Start conversation</button>
+      </div>
+    </section>
+    <section>
+      <h2>Conversation</h2>
+      <div id="chatlog" class="chatlog"></div>
+      <input id="question" placeholder="Ask in English or Arabic…">
+      <div class="row"><button id="send">Send</button><button class="secondary" id="resume">Load conversation</button></div>
+      <label for="conversationId">Conversation ID</label><input id="conversationId" placeholder="Created by Start conversation">
+      <p class="status">If no LLM is configured, answers use a clearly labeled deterministic fallback.</p>
+    </section>
+    <section>
+      <h2>Simulation</h2>
+      <label>Scenario JSON (weather, strategy, scenario)</label>
+      <textarea id="simulationInput">{
+  "weather": {
+    "seasonal_et0_mm": 600,
+    "seasonal_precipitation_mm": 80,
+    "seasonal_irrigation_available_mm": 500
+  },
+  "scenario": {
+    "rainfall_change_pct": -20,
+    "temperature_change_c": 1,
+    "water_availability_change_pct": -10
+  }
+}</textarea>
+      <button id="simulate">Run simulation</button><button class="secondary" id="compare">Compare 3 strategies</button>
+    </section>
+    <section>
+      <h2>Environmental data</h2>
+      <p class="status">Retrieval calls NASA POWER using the farm coordinates and period. Live availability is not guaranteed.</p>
+      <button id="environment">Retrieve NASA POWER</button>
+      <h2 style="margin-top:20px">Dataset catalog</h2>
+      <p class="status">Place a file in <code>data/incoming</code> to inspect and register it.</p>
+      <input id="datasetPath" placeholder="data/incoming/my_dataset.csv">
+      <button id="inspect">Inspect</button><button class="secondary" id="ingest">Ingest</button><button class="secondary" id="catalog">Refresh catalog</button>
+    </section>
+    <section class="wide"><h2>Agent response</h2><pre id="output">Ready. All analysis and calculations are performed by the Agent API.</pre></section>
+  </main>
+  <script>
+    const $ = id => document.getElementById(id);
+    let activeConversation = "";
+    async function api(path, body) {
+      const options = body === undefined ? {} : {
+        method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)
+      };
+      const response = await fetch(path, options);
+      const payload = await response.json();
+      if (!response.ok || !payload.success) throw new Error(payload.error?.message || response.statusText);
+      return payload.data;
+    }
+    function show(value) { $("output").textContent = JSON.stringify(value, null, 2); }
+    function summary() { return JSON.parse($("summary").value); }
+    function renderMessage(role, text) {
+      const item = document.createElement("div");
+      item.className = `message ${role}`;
+      item.textContent = `${role === "user" ? "You" : "Abu Qerdan"}: ${text}`;
+      $("chatlog").appendChild(item);
+      $("chatlog").scrollTop = $("chatlog").scrollHeight;
+    }
+    function run(action) {
+      return action().catch(error => show({success:false,error:error.message}));
+    }
+    $("loadSample").onclick = () => run(async () => {
+      const response = await fetch("/sample/farm_summary.json");
+      $("summary").value = JSON.stringify(await response.json(), null, 2);
+    });
+    $("analyze").onclick = () => run(async () => show(await api("/api/agent/analyze", {summary:summary()})));
+    $("plan").onclick = () => run(async () => show(await api("/api/agent/plan", {summary:summary()})));
+    $("start").onclick = () => run(async () => {
+      const data = await api("/api/agent/start", {summary:summary()});
+      activeConversation = data.conversation_id;
+      $("conversationId").value = activeConversation;
+      show(data);
+    });
+    $("send").onclick = () => run(async () => {
+      const message = $("question").value.trim();
+      if (!message) return;
+      renderMessage("user", message);
+      const data = await api("/api/agent/chat", {
+        message, conversation_id: $("conversationId").value || activeConversation || undefined,
+        summary: summary()
+      });
+      activeConversation = data.conversation_id;
+      $("conversationId").value = activeConversation;
+      renderMessage("assistant", data.reply);
+      $("question").value = "";
+      show(data);
+    });
+    $("resume").onclick = () => run(async () => {
+      const data = await api(`/api/agent/conversations/${encodeURIComponent($("conversationId").value)}`);
+      $("chatlog").replaceChildren();
+      data.messages.forEach(message => renderMessage(message.role, message.content));
+      show(data);
+    });
+    $("simulate").onclick = () => run(async () => {
+      const input = JSON.parse($("simulationInput").value);
+      show(await api("/api/agent/simulate", {summary:summary(), ...input}));
+    });
+    $("compare").onclick = () => run(async () => {
+      const input = JSON.parse($("simulationInput").value);
+      show(await api("/api/agent/compare", {summary:summary(), weather:input.weather}));
+    });
+    $("environment").onclick = () => run(async () => show(
+      await api("/api/agent/environment/retrieve", {summary:summary()})
+    ));
+    $("inspect").onclick = () => run(async () => show(await api("/api/agent/data/inspect", {
+      file_path:$("datasetPath").value
+    })));
+    $("ingest").onclick = () => run(async () => show(await api("/api/agent/data/ingest", {
+      file_path:$("datasetPath").value
+    })));
+    $("catalog").onclick = () => run(async () => show(await api("/api/agent/data/catalog")));
+    $("question").addEventListener("keydown", event => {
+      if (event.key === "Enter") $("send").click();
+    });
+    $("loadSample").click();
+  </script>
+</body>
+</html>
