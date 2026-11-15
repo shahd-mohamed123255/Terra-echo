@@ -33,11 +33,16 @@
     .content h1 { font-size: 26px; }
     .content h2 { font-size: 18px; }
 
+    .farm-step { max-width: 100%; }
+    .farm-step form { max-width: 100%; }
+
     /* الخانات */
     .d-row { gap: 10px; }
     .d-input { min-width: 0; width: 100%; }
     .d-row .choice { flex: 1 1 calc(50% - 10px); }
     .d-row .choice > span { padding: 10px 12px; text-align: center; font-size: 14px; }
+    .farm-step .priority-choice { flex-basis: calc(50% - 10px); max-width: none; }
+    .farm-step .priority-choice > span { height: 100%; }
     .d-block .hint { margin-bottom: 14px; line-height: 1.5; }
 
     /* كروت التربة: 3 جنب بعض بدل واحد تحت التاني */

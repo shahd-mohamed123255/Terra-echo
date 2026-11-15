@@ -35,7 +35,7 @@
 </ol>
         </aside>
 
-        <main class="content">
+        <main class="content farm-step">
 
             <span class="step-pill">Step 2</span>
             <h1>Farm details</h1>

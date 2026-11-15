@@ -24,6 +24,39 @@
 .soil-card:hover .soil-svg { transform: translateY(-4px) scale(1.05); }
 .soil-svg { filter: drop-shadow(0 6px 8px rgba(0, 0, 0, .25)); }
 
+.farm-step {
+    width: 100%;
+    max-width: 1050px;
+}
+.farm-step form {
+    width: 100%;
+    max-width: 1050px;
+    margin: 28px auto 0;
+}
+.farm-step .d-row,
+.farm-step .soil-cards {
+    justify-content: center;
+}
+.farm-step .soil-cards {
+    width: 100%;
+}
+.farm-step .priority-choice {
+    flex: 1 1 220px;
+    max-width: 340px;
+}
+.farm-step .priority-choice > span {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+.farm-step .priority-choice small {
+    display: block;
+    font-size: 0.85em;
+    font-weight: normal;
+    line-height: 1.4;
+}
+
 .sum-card {
     width: 100%; max-width: 760px; margin: 20px auto 0;
     border-radius: 14px; overflow: hidden; text-align: left;

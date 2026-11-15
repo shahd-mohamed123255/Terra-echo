@@ -43,7 +43,7 @@
             </ol>
         </aside>
 
-        <main class="content">
+        <main class="content farm-step">
 
             <span class="step-pill">Step 3</span>
             <h1>Water and Crops</h1>
@@ -104,10 +104,10 @@
                             'soil_health'      => ['Soil health', 'Favor plans that support soil over seasons'],
                             'local_cost'       => ['Local cost', 'Needs your local cost input'],
                         ] as $value => [$label, $hintText])
-                            <label class="choice">
+                            <label class="choice priority-choice">
                                 <input type="radio" name="priority" value="{{ $value }}"
                                        @checked($prio === $value) required>
-                                <span>{{ $label }}<small>{{ $hintText }}</small></span>
+                                <span><strong>{{ $label }}</strong><small>{{ $hintText }}</small></span>
                             </label>
                         @endforeach
                     </div>
